@@ -89,7 +89,7 @@ func (s *stepBuilder) setCategory(prop notionapi.Property) {
 
 func (s *stepBuilder) setLink(prop notionapi.Property) {
 	option := prop.(*notionapi.URLProperty)
-	s.step.Link = &option.URL
+	s.step.Link = option.URL
 }
 
 func (s *stepBuilder) setStatus(prop notionapi.Property) {
@@ -104,7 +104,7 @@ func (s *stepBuilder) setNotes(prop notionapi.Property) {
 		return
 	}
 
-	s.step.Notes = &text[0].PlainText
+	s.step.Notes = text[0].PlainText
 }
 
 func (s *stepBuilder) setPoints(prop notionapi.Property) {
