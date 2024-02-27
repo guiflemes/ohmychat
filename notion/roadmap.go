@@ -1,6 +1,7 @@
 package notion
 
 import (
+	"notion-agenda/utils"
 	"time"
 )
 
@@ -21,8 +22,9 @@ const (
 )
 
 var (
-	now         = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
-	expiredDays = 15
+	now                       = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	expiredDays           int = 15
+	needsInitializionDays int = 30
 )
 
 type Roadmap struct {
@@ -32,6 +34,25 @@ type Roadmap struct {
 
 func (r *Roadmap) StepCount() int {
 	return len(r.Steps)
+}
+
+func (r *Roadmap) HasPendency() bool {
+	return utils.Any[StudyStep](r.Steps, func(s StudyStep) bool {
+		if s.Status == Pending {
+			return true
+		}
+		return false
+	})
+}
+
+func (r *Roadmap) Pendency() []StudyStep {
+	pedendy := make([]StudyStep, 0)
+	for _, s := range r.Steps {
+		if s.Status == Pending {
+			pedendy = append(pedendy, s)
+		}
+	}
+	return pedendy
 }
 
 func (r *Roadmap) String() string {
@@ -85,6 +106,28 @@ func (s *StudyStep) ExpireSoon() bool {
 	x := now.AddDate(0, 0, expiredDays)
 
 	return x.Equal(s.Deadline) || x.After(s.Deadline)
+}
+
+func (s *StudyStep) NeedsAttention() bool {
+	return s.ExpireSoon() && s.Priority == High
+}
+
+func (s *StudyStep) NeedsInitialization() bool {
+	x := s.CreatedAt.AddDate(0, 0, needsInitializionDays)
+	return x.Equal(now) || x.Before(now)
+}
+
+func (s *StudyStep) IsBlockAfterInitialization() bool {
+	if s.Status != Blocked {
+		return false
+	}
+
+	if s.StartedAt.IsZero() {
+		return false
+	}
+
+	x := s.StartedAt.AddDate(0, 0, 15)
+	return x.Equal(now) || x.Before(now)
 }
 
 func FromSlice[T any](ID string, items []T, stepBuilder func(item T) StudyStep) *Roadmap {
