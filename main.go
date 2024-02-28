@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"notion-agenda/notion"
+	"notion-agenda/service"
 	"notion-agenda/settings"
 
 	"github.com/joho/godotenv"
@@ -16,6 +17,11 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	service.RunBus()
+
+}
+
+func sketchRepo() {
 	r, err := notion.SketchRepo(settings.GETENV("PAGE_ID"))
 	if err != nil {
 		fmt.Println(err)
