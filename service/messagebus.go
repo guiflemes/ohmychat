@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -16,17 +17,45 @@ const (
 	Command             = iota
 )
 
-type Message struct {
-	Type MessageType
+type EventHandler struct {
+	Topic   string
+	Handler func()
+}
+
+type EventHandlers []EventHandler
+
+func (h EventHandlers) GetHandler(topic string) func() {
+	for _, e := range h {
+		if e.Topic == topic {
+			return e.Handler
+		}
+	}
+	return nil
+}
+
+type MessageMeta struct {
+	Topic string
+	Type  MessageType
+}
+
+type Message interface {
+	Meta() MessageMeta
 }
 
 type messageBus struct {
-	queue chan Message
-	done  <-chan struct{}
+	queue         chan Message
+	done          <-chan struct{}
+	eventHandlers EventHandlers
 }
 
 func NewBus(queue chan Message, done chan struct{}) *messageBus {
-	return &messageBus{queue: queue, done: done}
+	return &messageBus{
+		queue: queue,
+		done:  done}
+}
+
+func (m *messageBus) SetEventHandler(handler EventHandler) {
+	m.eventHandlers = append(m.eventHandlers, handler)
 }
 
 func (m *messageBus) Handler() {
@@ -36,13 +65,8 @@ func (m *messageBus) Handler() {
 		fmt.Println("Waiting a message")
 		select {
 		case <-m.done:
-			select {
-			case msg := <-m.queue:
-				m.handler(msg)
-			default:
-				close(m.queue)
-				return
-			}
+			close(m.queue)
+			return
 		case msg := <-m.queue:
 			m.handler(msg)
 
@@ -55,13 +79,34 @@ func (m *messageBus) Handler() {
 
 func (m *messageBus) handler(message Message) {
 
-	switch message.Type {
+	switch message.Meta().Type {
 
 	case Event:
-		fmt.Println("event")
+		m.handlerEvent(message)
 	case Command:
-		fmt.Println("command")
+		fmt.Println("command handler not implemented yet")
 
+	}
+}
+
+func (m *messageBus) handlerEvent(message Message) {
+	handler := m.eventHandlers.GetHandler(message.Meta().Topic)
+
+	if handler == nil {
+		log.Printf("handler to the given topic '%s' not found\n", message.Meta().Topic)
+	}
+
+	go handler()
+}
+
+type SomeMessage struct {
+	Type MessageType
+}
+
+func (s *SomeMessage) Meta() MessageMeta {
+	return MessageMeta{
+		Type:  s.Type,
+		Topic: "some_name",
 	}
 }
 
@@ -72,6 +117,8 @@ func RunBus() {
 	done := make(chan struct{}, 1)
 
 	bus := NewBus(queue, done)
+	bus.SetEventHandler(EventHandler{Topic: "some_name", Handler: func() { fmt.Println("handler event") }})
+
 	go bus.Handler()
 
 	limit := 10
@@ -79,7 +126,7 @@ func RunBus() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < limit; i++ {
-		message := Message{Type: Event}
+		message := &SomeMessage{}
 
 		if i%2 == 0 {
 			message.Type = Command
@@ -93,11 +140,13 @@ func RunBus() {
 	}
 
 	go func() {
-		<-signalCh
-		fmt.Println("Stoping gracefully")
-		close(done)
+		wg.Wait()
+
 	}()
 
-	wg.Wait()
-
+	select {
+	case <-signalCh:
+		close(done)
+		return
+	}
 }

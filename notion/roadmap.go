@@ -52,6 +52,7 @@ func (r *Roadmap) Pendency() []StudyStep {
 			pedendy = append(pedendy, s)
 		}
 	}
+
 	return pedendy
 }
 
