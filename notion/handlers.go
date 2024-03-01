@@ -28,7 +28,7 @@ func NewProcessHandler() *ProcessHandler {
 		processing: []func(roadMap *Roadmap){
 			func(roadMap *Roadmap) {
 				if roadMap.HasPendency() {
-					e := utils.MapSlice(roadMap.Pendency(), func(s StudyStep) StudyEvent { return StudyEvent{} })
+					e := utils.Map(roadMap.Pendency(), func(s StudyStep) StudyEvent { return StudyEvent{} })
 					events = append(events, e...)
 				}
 			},

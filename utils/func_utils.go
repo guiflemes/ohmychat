@@ -21,7 +21,7 @@ func Any[T any](values []T, fn func(T) bool) bool {
 	return false
 }
 
-func MapSlice[T any, U any](original []T, fn func(T) U) []U {
+func Map[T any, U any](original []T, fn func(T) U) []U {
 	newSlice := make([]U, 0, len(original))
 	for _, item := range original {
 		newSlice = append(newSlice, fn(item))
