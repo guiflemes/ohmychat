@@ -6,34 +6,41 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/fatih/color"
+	"github.com/google/uuid"
 )
 
-// USED TO TEST BUS AT COMMAND LINDE
+// USED TO TEST BUS AT COMMAND LINE
 func RunBus() {
 
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-	done := make(chan struct{}, 1)
 
-	queue := Queue{message: make(chan Message, 0), done: done}
+	bus := NewBus()
+	bus.SetHandler(Handler{Topic: "some_name", HandlerFunc: func(message Message) { fmt.Println("handler event") }})
 
-	bus := NewBus(queue)
-	bus.SetEventHandler(EventHandler{Topic: "some_name", Handler: func() { fmt.Println("handler event") }})
+	go bus.Consume()
 
-	go bus.Handler()
-
-	commandLine(queue)
+	commandLine(bus)
 
 }
 
-func commandLine(queue Queue) {
+type SomeMessage struct{}
+
+func (s *SomeMessage) Meta() MessageMeta {
+	return MessageMeta{
+		Id:    uuid.New(),
+		Topic: "some_name",
+	}
+}
+
+func commandLine(bus *messageBus) {
 
 	green := color.New(color.FgGreen)
 	red := color.New(color.FgRed)
+	yellow := color.New(color.FgYellow)
 
 	check := func(answer string) bool {
 		return answer == "Y" || answer == "N"
@@ -55,7 +62,16 @@ func commandLine(queue Queue) {
 	}
 
 	var num int
-	var wg sync.WaitGroup
+	var err error
+
+	defer func() {
+		if err != nil {
+			red.Printf("An error has ocurred %s\n", err)
+			bus.Close()
+			return
+		}
+		green.Println("Obrigado volte sempre!!")
+	}()
 
 	for {
 
@@ -63,12 +79,11 @@ func commandLine(queue Queue) {
 		answer, err := initialInput()
 
 		if err != nil {
-			fmt.Println("error", err)
 			break
 		}
 
 		if !check(answer) {
-			red.Printf("Resposta '%s' invalida, tente novamente\n", answer)
+			yellow.Printf("Resposta '%s' invalida, tente novamente\n", answer)
 			continue
 		}
 
@@ -76,32 +91,20 @@ func commandLine(queue Queue) {
 			break
 		}
 
-		green.Print("Quantos mensagen gostaria de publica?")
+		green.Print("Quantos mensagen gostaria de publicar?")
 
 		_, err = fmt.Scan(&num)
 
 		if err != nil {
-			fmt.Println("error", err)
 			break
 		}
 
 		for i := 0; i < num; i++ {
 			message := &SomeMessage{}
 
-			wg.Add(1)
-			go func(msg Message) {
-				queue.Publish(msg)
-				wg.Done()
-			}(message)
+			go bus.Publish(message)
 		}
 
 	}
-
-	go func() {
-		wg.Wait()
-
-	}()
-
-	green.Println("Obrigado volte sempre")
 
 }

@@ -2,50 +2,44 @@ package notion
 
 import (
 	"fmt"
-	"notion-agenda/utils"
 )
 
 type RoadMapGetter interface {
 	GetRoadMap(pageID string) (*Roadmap, error)
 }
 
-type StudyEvent struct {
-	name string
-	step StudyStep
+func pendency(roadMap *Roadmap, publisher Publisher) {
+	if roadMap.HasPendency() {
+		publisher.Publish(&PendencyEvent{Pendency: roadMap.Pendency()})
+	}
 }
 
-type ProcessHandler struct {
-	notionRepo RoadMapGetter
-	processing []func(roadMap *Roadmap)
-	events     []StudyStep
+type studyInspectHandler struct {
+	notionRepo  RoadMapGetter
+	inspections []func(roadMap *Roadmap, publisher Publisher)
+	publisher   Publisher
 }
 
-func NewProcessHandler() *ProcessHandler {
-	events := make([]StudyEvent, 0)
-
-	return &ProcessHandler{
-		notionRepo: nil,
-		processing: []func(roadMap *Roadmap){
-			func(roadMap *Roadmap) {
-				if roadMap.HasPendency() {
-					e := utils.Map(roadMap.Pendency(), func(s StudyStep) StudyEvent { return StudyEvent{} })
-					events = append(events, e...)
-				}
-			},
+func NewStudyInspectHandler(notionRepo RoadMapGetter, publisher Publisher) *studyInspectHandler {
+	return &studyInspectHandler{
+		notionRepo: notionRepo,
+		publisher:  publisher,
+		inspections: []func(roadMap *Roadmap, publisher Publisher){
+			pendency,
 		},
 	}
 }
 
-func (h *ProcessHandler) Process() {
-	roadMap, err := h.notionRepo.GetRoadMap("")
+func (h *studyInspectHandler) Handle(message StudyInspectCmd) {
+	roadMap, err := h.notionRepo.GetRoadMap(message.RoadmapID)
 
 	if err != nil {
 		fmt.Println("some error", err)
 		return
 	}
 
-	for _, proc := range h.processing {
-		proc(roadMap)
+	for _, insp := range h.inspections {
+		insp(roadMap, h.publisher)
 	}
 
 }

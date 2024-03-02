@@ -1,36 +1,42 @@
 package service
 
 import (
-	"fmt"
 	"log"
+
+	"github.com/google/uuid"
 )
 
-type MessageType int
-
-const (
-	Event   MessageType = iota
-	Command             = iota
-)
-
-type EventHandler struct {
-	Topic   string
-	Handler func()
+type Handler struct {
+	Topic       string
+	HandlerFunc func(message Message)
 }
 
-type EventHandlers []EventHandler
+type Handlers []Handler
 
-func (h EventHandlers) GetHandler(topic string) func() {
-	for _, e := range h {
-		if e.Topic == topic {
-			return e.Handler
+func (h Handlers) GetHandler(topic string) func(message Message) {
+	for _, item := range h {
+		if item.Topic == topic {
+			return item.HandlerFunc
 		}
 	}
 	return nil
 }
 
+func (h *Handlers) AddHandler(handler Handler) {
+	for _, item := range *h {
+		if item.Topic == handler.Topic {
+			log.Printf(`Handler with the given topic %s already exists.
+			Skipping new registration. The existing handler will be maintained.`, handler.Topic)
+		}
+		return
+	}
+
+	*h = append(*h, handler)
+}
+
 type MessageMeta struct {
+	Id    uuid.UUID
 	Topic string
-	Type  MessageType
 }
 
 type Message interface {
@@ -38,59 +44,56 @@ type Message interface {
 }
 
 type messageBus struct {
-	queue         Queue
-	eventHandlers EventHandlers
+	queue    chan Message
+	handlers Handlers
+	done     chan struct{}
 }
 
-func NewBus(queue Queue) *messageBus {
+func NewBus() *messageBus {
 	return &messageBus{
-		queue: queue,
+		queue: make(chan Message, 0),
+		done:  make(chan struct{}),
 	}
 }
 
-func (m *messageBus) SetEventHandler(handler EventHandler) {
-	m.eventHandlers = append(m.eventHandlers, handler)
+func (m *messageBus) SetHandler(handler Handler) {
+	m.handlers = append(m.handlers, handler)
 }
 
-func (m *messageBus) Handler() {
-
+func (m *messageBus) Consume() {
 	for {
-		msg, ok := m.queue.Consume()
-		if ok {
-			m.handler(msg)
+		select {
+
+		case msg, ok := <-m.queue:
+			if ok {
+				m.handler(msg)
+			}
+
+		case <-m.done:
+			close(m.queue)
+			break
+
+		default:
 		}
 	}
+
+}
+
+func (m *messageBus) Publish(message Message) {
+	m.queue <- message
+}
+
+func (m *messageBus) Close() {
+	close(m.done)
 }
 
 func (m *messageBus) handler(message Message) {
 
-	switch message.Meta().Type {
-
-	case Event:
-		m.handlerEvent(message)
-	case Command:
-		fmt.Println("command handler not implemented yet")
-
-	}
-}
-
-func (m *messageBus) handlerEvent(message Message) {
-	handler := m.eventHandlers.GetHandler(message.Meta().Topic)
-
+	handler := m.handlers.GetHandler(message.Meta().Topic)
 	if handler == nil {
 		log.Printf("handler to the given topic '%s' not found\n", message.Meta().Topic)
 	}
 
-	go handler()
-}
+	go handler(message)
 
-type SomeMessage struct {
-	Type MessageType
-}
-
-func (s *SomeMessage) Meta() MessageMeta {
-	return MessageMeta{
-		Type:  s.Type,
-		Topic: "some_name",
-	}
 }
