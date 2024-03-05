@@ -1,8 +1,9 @@
-package service
+package tools
 
 import (
 	"bufio"
 	"fmt"
+	"notion-agenda/src/service"
 	"os"
 	"os/signal"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 type myHandler struct{}
 
-func (h *myHandler) Handle(message Message) error {
+func (h *myHandler) Handle(message service.Message) error {
 	fmt.Println("My handler")
 	return nil
 }
@@ -25,7 +26,7 @@ func RunBus() {
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
 
-	bus := NewBus()
+	bus := service.NewBus()
 	bus.SetHandler("some_name", &myHandler{})
 
 	bus.Consume()
@@ -42,14 +43,19 @@ var (
 
 type SomeMessage struct{}
 
-func (s *SomeMessage) Meta() MessageMeta {
-	return MessageMeta{
+func (s *SomeMessage) Meta() service.MessageMeta {
+	return service.MessageMeta{
 		Id:    uuid.New(),
 		Topic: "some_name",
 	}
 }
 
-func commandLine(bus *messageBus) {
+type myBus interface {
+	Close()
+	Publish(service.Message)
+}
+
+func commandLine(bus myBus) {
 
 	check := func(answer string) bool {
 		return answer == "Y" || answer == "N"

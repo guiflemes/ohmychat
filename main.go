@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"notion-agenda/notion"
 	"notion-agenda/service"
+	"notion-agenda/src/notion"
 
 	"github.com/joho/godotenv"
 )
