@@ -2,7 +2,7 @@ package notion
 
 import (
 	"log"
-	"notion-agenda/service"
+	"notion-agenda/src/service"
 )
 
 type RoadMapGetter interface {

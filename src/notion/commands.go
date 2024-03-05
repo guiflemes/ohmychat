@@ -1,7 +1,7 @@
 package notion
 
 import (
-	"notion-agenda/service"
+	"notion-agenda/src/service"
 
 	"github.com/google/uuid"
 )

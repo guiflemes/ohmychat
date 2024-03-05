@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"notion-agenda/service"
 	"notion-agenda/src/notion"
+	"notion-agenda/src/service"
 
 	"github.com/joho/godotenv"
 )
@@ -17,8 +17,6 @@ func main() {
 	}
 
 	sketchRepo()
-
-	select {}
 
 }
 
@@ -38,5 +36,7 @@ func sketchRepo() {
 	bus.Consume()
 
 	notion.StudyInspect(bus)
+
+	select {}
 
 }

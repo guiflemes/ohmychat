@@ -1,6 +1,6 @@
 package notion
 
-import "notion-agenda/service"
+import "notion-agenda/src/service"
 
 type Publisher interface {
 	Publish(message service.Message)

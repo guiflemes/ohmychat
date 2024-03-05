@@ -1,7 +1,7 @@
 package notion
 
 import (
-	"notion-agenda/utils"
+	"notion-agenda/src/utils"
 	"time"
 )
 
