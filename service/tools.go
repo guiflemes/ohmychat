@@ -12,6 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type myHandler struct{}
+
+func (h *myHandler) Handle(message Message) error {
+	fmt.Println("My handler")
+	return nil
+}
+
 // USED TO TEST BUS AT COMMAND LINE
 func RunBus() {
 
@@ -19,13 +26,19 @@ func RunBus() {
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
 
 	bus := NewBus()
-	bus.SetHandler(Handler{Topic: "some_name", HandlerFunc: func(message Message) { fmt.Println("handler event") }})
+	bus.SetHandler("some_name", &myHandler{})
 
-	go bus.Consume()
+	bus.Consume()
 
 	commandLine(bus)
 
 }
+
+var (
+	green  = color.New(color.FgGreen)
+	red    = color.New(color.FgRed)
+	yellow = color.New(color.FgYellow)
+)
 
 type SomeMessage struct{}
 
@@ -37,10 +50,6 @@ func (s *SomeMessage) Meta() MessageMeta {
 }
 
 func commandLine(bus *messageBus) {
-
-	green := color.New(color.FgGreen)
-	red := color.New(color.FgRed)
-	yellow := color.New(color.FgYellow)
 
 	check := func(answer string) bool {
 		return answer == "Y" || answer == "N"
@@ -102,7 +111,7 @@ func commandLine(bus *messageBus) {
 		for i := 0; i < num; i++ {
 			message := &SomeMessage{}
 
-			go bus.Publish(message)
+			bus.Publish(message)
 		}
 
 	}

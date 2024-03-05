@@ -1,7 +1,8 @@
 package notion
 
 import (
-	"fmt"
+	"log"
+	"notion-agenda/service"
 )
 
 type RoadMapGetter interface {
@@ -30,16 +31,23 @@ func NewStudyInspectHandler(notionRepo RoadMapGetter, publisher Publisher) *stud
 	}
 }
 
-func (h *studyInspectHandler) Handle(message StudyInspectCmd) {
-	roadMap, err := h.notionRepo.GetRoadMap(message.RoadmapID)
+func (h *studyInspectHandler) Handle(message service.Message) error {
+	cmd, ok := message.(*StudyInspectCmd)
+
+	if !ok {
+		log.Printf("Unexpected type in Function: %T", message)
+		panic("Critical error: Unexpected type")
+	}
+
+	roadMap, err := h.notionRepo.GetRoadMap(cmd.RoadmapID)
 
 	if err != nil {
-		fmt.Println("some error", err)
-		return
+		return err
 	}
 
 	for _, insp := range h.inspections {
 		insp(roadMap, h.publisher)
 	}
 
+	return nil
 }

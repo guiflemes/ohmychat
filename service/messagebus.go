@@ -1,28 +1,34 @@
 package service
 
 import (
+	"fmt"
 	"log"
+	"sync"
 
 	"github.com/google/uuid"
 )
 
-type Handler struct {
-	Topic       string
-	HandlerFunc func(message Message)
+type Handler interface {
+	Handle(message Message) error
 }
 
-type Handlers []Handler
+type handleMessage struct {
+	Topic   string
+	Handler Handler
+}
 
-func (h Handlers) GetHandler(topic string) func(message Message) {
+type Handlers []handleMessage
+
+func (h Handlers) GetHandler(topic string) func(message Message) error {
 	for _, item := range h {
 		if item.Topic == topic {
-			return item.HandlerFunc
+			return item.Handler.Handle
 		}
 	}
 	return nil
 }
 
-func (h *Handlers) AddHandler(handler Handler) {
+func (h *Handlers) AddHandler(handler handleMessage) {
 	for _, item := range *h {
 		if item.Topic == handler.Topic {
 			log.Printf(`Handler with the given topic %s already exists.
@@ -47,6 +53,7 @@ type messageBus struct {
 	queue    chan Message
 	handlers Handlers
 	done     chan struct{}
+	wg       sync.WaitGroup
 }
 
 func NewBus() *messageBus {
@@ -56,35 +63,51 @@ func NewBus() *messageBus {
 	}
 }
 
-func (m *messageBus) SetHandler(handler Handler) {
-	m.handlers = append(m.handlers, handler)
+func (m *messageBus) SetHandler(topic string, handler Handler) {
+	m.handlers = append(m.handlers, handleMessage{Topic: topic, Handler: handler})
 }
 
 func (m *messageBus) Consume() {
-	for {
-		select {
 
-		case msg, ok := <-m.queue:
-			if ok {
-				m.handler(msg)
+	m.wg.Add(1)
+	go func() {
+		m.wg.Done()
+		for {
+			select {
+
+			case msg, ok := <-m.queue:
+				if ok {
+					m.handler(msg)
+				}
+
+			case <-m.done:
+				return
+
+			default:
 			}
-
-		case <-m.done:
-			close(m.queue)
-			break
-
-		default:
 		}
-	}
+
+	}()
 
 }
 
 func (m *messageBus) Publish(message Message) {
-	m.queue <- message
+	m.wg.Add(1)
+	go func() {
+		defer m.wg.Done()
+		select {
+		case <-m.done:
+			return
+		case m.queue <- message:
+
+		}
+	}()
 }
 
 func (m *messageBus) Close() {
 	close(m.done)
+	m.wg.Wait()
+	close(m.queue)
 }
 
 func (m *messageBus) handler(message Message) {
@@ -94,6 +117,11 @@ func (m *messageBus) handler(message Message) {
 		log.Printf("handler to the given topic '%s' not found\n", message.Meta().Topic)
 	}
 
-	go handler(message)
-
+	m.wg.Add(1)
+	go func() {
+		m.wg.Done()
+		if err := handler(message); err != nil {
+			log.Println(fmt.Errorf("Error '%s' handling message '%s' at topic '%s'", err, message.Meta().Id, message.Meta().Topic))
+		}
+	}()
 }

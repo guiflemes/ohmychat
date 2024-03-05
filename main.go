@@ -5,7 +5,6 @@ import (
 	"log"
 	"notion-agenda/notion"
 	"notion-agenda/service"
-	"notion-agenda/settings"
 
 	"github.com/joho/godotenv"
 )
@@ -17,15 +16,27 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	service.RunBus()
+	sketchRepo()
+
+	select {}
 
 }
 
-func sketchRepo() {
-	r, err := notion.SketchRepo(settings.GETENV("PAGE_ID"))
-	if err != nil {
-		fmt.Println(err)
-	}
+type myHandler struct{}
 
-	fmt.Println(r)
+func (h *myHandler) Handle(message service.Message) error {
+	fmt.Println("handler event")
+	return nil
+}
+
+func sketchRepo() {
+
+	bus := service.NewBus()
+	bus.SetHandler("notion_inspect_study_road_map", notion.NewStudyInspectHandler(&notion.SketchRepo{}, bus))
+	bus.SetHandler("notion_study_pendency", &myHandler{})
+
+	bus.Consume()
+
+	notion.StudyInspect(bus)
+
 }

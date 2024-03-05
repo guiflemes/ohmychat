@@ -9,7 +9,10 @@ import (
 	"github.com/jomei/notionapi"
 )
 
-func SketchRepo(pageID string) (*Roadmap, error) {
+type SketchRepo struct{}
+
+func (r *SketchRepo) GetRoadMap(pageID string) (*Roadmap, error) {
+
 	client := notionapi.NewClient(notionapi.Token(settings.GETENV("NOTION_API")))
 	dbQuery, err := client.Database.Query(context.Background(), notionapi.DatabaseID(pageID), nil)
 
