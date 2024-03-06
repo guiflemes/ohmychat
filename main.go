@@ -5,6 +5,7 @@ import (
 	"log"
 	"notion-agenda/src/notion"
 	"notion-agenda/src/service"
+	"notion-agenda/src/telegram"
 
 	"github.com/joho/godotenv"
 )
@@ -16,7 +17,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	sketchRepo()
+	telegram.Tele()
 
 }
 
