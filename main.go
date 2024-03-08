@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"notion-agenda/src/notion"
 	"notion-agenda/src/service"
@@ -17,22 +16,15 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	telegram.Tele()
+	Run()
 
 }
 
-type myHandler struct{}
-
-func (h *myHandler) Handle(message service.Message) error {
-	fmt.Println("handler event")
-	return nil
-}
-
-func sketchRepo() {
+func Run() {
 
 	bus := service.NewBus()
 	bus.SetHandler("notion_inspect_study_road_map", notion.NewStudyInspectHandler(&notion.SketchRepo{}, bus))
-	bus.SetHandler("notion_study_pendency", &myHandler{})
+	bus.SetHandler("notion_study_pendency", telegram.NewTelegramPendencyHandler())
 
 	bus.Consume()
 
