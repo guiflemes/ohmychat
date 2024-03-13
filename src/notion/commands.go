@@ -1,9 +1,9 @@
 package notion
 
 import (
-	"notion-agenda/src/service"
-
 	"github.com/google/uuid"
+
+	"notion-agenda/src/service"
 )
 
 type StudyInspectCmd struct {

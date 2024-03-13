@@ -1,9 +1,9 @@
 package notion
 
 import (
-	"notion-agenda/src/service"
-
 	"github.com/google/uuid"
+
+	"notion-agenda/src/service"
 )
 
 type PendencyEvent struct {
@@ -14,5 +14,16 @@ func (e *PendencyEvent) Meta() service.MessageMeta {
 	return service.MessageMeta{
 		Id:    uuid.New(),
 		Topic: "notion_study_pendency",
+	}
+}
+
+type PriorityEvent struct {
+	Priorities []StudyStep
+}
+
+func (e *PriorityEvent) Meta() service.MessageMeta {
+	return service.MessageMeta{
+		Id:    uuid.New(),
+		Topic: "notion_study_attention",
 	}
 }

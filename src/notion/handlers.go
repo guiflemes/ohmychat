@@ -2,6 +2,7 @@ package notion
 
 import (
 	"log"
+
 	"notion-agenda/src/service"
 )
 
@@ -12,6 +13,12 @@ type RoadMapGetter interface {
 func pendency(roadMap *Roadmap, publisher Publisher) {
 	if roadMap.HasPendency() {
 		publisher.Publish(&PendencyEvent{Pendency: roadMap.Pendency()})
+	}
+}
+
+func priority(roadMap *Roadmap, publisher Publisher) {
+	if roadMap.NeedsAttention() {
+		publisher.Publish(&PriorityEvent{Priorities: roadMap.Priorities()})
 	}
 }
 
@@ -27,8 +34,8 @@ func NewStudyInspectHandler(notionRepo RoadMapGetter, publisher Publisher) *stud
 		publisher:  publisher,
 		inspections: []func(roadMap *Roadmap, publisher Publisher){
 			pendency,
-		},
-	}
+			priority,
+		}}
 }
 
 func (h *studyInspectHandler) Handle(message service.Message) error {

@@ -1,8 +1,9 @@
 package notion
 
 import (
-	"notion-agenda/src/utils"
 	"time"
+
+	"notion-agenda/src/utils"
 )
 
 type Priority string
@@ -22,7 +23,16 @@ const (
 )
 
 var (
-	now                       = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	now = time.Date(
+		time.Now().Year(),
+		time.Now().Month(),
+		time.Now().Day(),
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 	expiredDays           int = 15
 	needsInitializionDays int = 30
 )
@@ -37,7 +47,7 @@ func (r *Roadmap) StepCount() int {
 }
 
 func (r *Roadmap) HasPendency() bool {
-	return utils.Any[StudyStep](r.Steps, func(s StudyStep) bool {
+	return utils.Any(r.Steps, func(s StudyStep) bool {
 		if s.Status == Pending {
 			return true
 		}
@@ -62,6 +72,26 @@ func (r *Roadmap) String() string {
 		str += i.Name + ", "
 	}
 	return str
+}
+
+func (r *Roadmap) NeedsAttention() bool {
+	for _, step := range r.Steps {
+		if step.NeedsAttention() {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Roadmap) Priorities() []StudyStep {
+	steps := make([]StudyStep, 0)
+	for _, step := range r.Steps {
+		if step.NeedsAttention() {
+			steps = append(steps, step)
+		}
+	}
+	return steps
+
 }
 
 type StudyStep struct {
