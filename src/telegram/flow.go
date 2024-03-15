@@ -2,12 +2,10 @@ package telegram
 
 import "sync"
 
-type Card struct {
-	ID          string `json:"id"`
-	Type        string `json:"type"`
-	Initial     bool   `json:"initial"`
-	ExpectedMsg string `json:"expected_msg"`
-	Template    any    `json:"template"`
+type Message struct {
+	ID      string `json:"id"`
+	Type    string `json:"type"`
+	Context string `json:"context"`
 }
 
 type Relationship struct {
@@ -18,10 +16,10 @@ type Relationship struct {
 }
 
 type Flow struct {
-	Name          string          `json:"name"`
-	Key           string          `json:"key"`
-	Cards         map[string]Card `json:"cards"`
-	Relationships []Relationship  `json:"relationships"`
+	Name          string             `json:"name"`
+	Key           string             `json:"key"`
+	Messages      map[string]Message `json:"messages"`
+	Relationships []Relationship     `json:"relationships"`
 	lock          sync.RWMutex
 }
 
