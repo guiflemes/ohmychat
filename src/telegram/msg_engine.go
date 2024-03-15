@@ -2,15 +2,12 @@ package telegram
 
 import "fmt"
 
-type content interface {
-	hash() int
-}
-
 type messageNode struct {
 	firstChild  *messageNode
 	nextSibling *messageNode
 	id          string
 	parent      string
+	content     string
 }
 
 //                           coco
@@ -55,31 +52,67 @@ func (n *messageNode) insert(node *messageNode) {
 
 }
 
-func (n *messageNode) printChildren() {
-	str := ""
-	count := 1
-	if n.firstChild != nil {
-		str += fmt.Sprintf("%d: %s\n", count, n.firstChild.id)
-
-		nextSibling := n.firstChild.nextSibling
-		for nextSibling != nil {
-			count++
-			str += fmt.Sprintf("%d: %s\n", count, nextSibling.id)
-			nextSibling = nextSibling.nextSibling
-		}
+func (n *messageNode) searchOneLevel(id string) *messageNode {
+	if n.id == id {
+		return n
 	}
-	fmt.Println(str)
+	return n.searchChild(id)
 }
 
-func (n *messageNode) search(value int) *messageNode {
-	return n
+func (n *messageNode) searchChild(id string) *messageNode {
+	if n.firstChild == nil {
+		return nil
+	}
+
+	child := n.firstChild
+
+	if child.id == id {
+		return child
+	}
+
+	for child.nextSibling != nil {
+		child = child.nextSibling
+		if child.id == id {
+			return child
+		}
+	}
+
+	return nil
+}
+
+func (n *messageNode) transverseInChildren(fn func(child *messageNode)) {
+	if n.firstChild == nil {
+		return
+	}
+
+	child := n.firstChild
+	if child.nextSibling != nil {
+		for child != nil {
+			fn(child)
+			child = child.nextSibling
+		}
+		return
+	}
+
+	fn(child)
+
+}
+
+func (n *messageNode) repChildren() string {
+	rep := ""
+	count := 1
+	n.transverseInChildren(func(child *messageNode) {
+		rep += fmt.Sprintf("%d: %s\n", count, child.id)
+		count++
+	})
+	return rep
 }
 
 type MessageTree struct {
 	root *messageNode
 }
 
-func (t *MessageTree) insert(node *messageNode) *MessageTree {
+func (t *MessageTree) Insert(node *messageNode) *MessageTree {
 	if t.root == nil {
 		t.root = node
 		return t
@@ -89,25 +122,46 @@ func (t *MessageTree) insert(node *messageNode) *MessageTree {
 	return t
 }
 
-func (t *MessageTree) Search(value int) *messageNode {
+func (t *MessageTree) Search(id string) *messageNode {
 	if t.root == nil {
 		return nil
 	}
-	return t.root.search(value)
+
+	return t.root.searchChild(id)
 }
 
-func Fn() {
+func Fn() *MessageTree {
 	tree := &MessageTree{}
-	tree.insert(&messageNode{parent: "", id: "coco"})
-	tree.insert(&messageNode{parent: "coco", id: "xixi"})
-	tree.insert(&messageNode{parent: "coco", id: "veve"})
-	tree.insert(&messageNode{parent: "coco", id: "lolo"})
+	tree.Insert(&messageNode{parent: "", id: "coco"}).
+		Insert(&messageNode{parent: "coco", id: "xixi"}).
+		Insert(&messageNode{parent: "coco", id: "veve"}).
+		Insert(&messageNode{parent: "coco", id: "lolo"}).
+		Insert(&messageNode{parent: "xixi", id: "dudu"}).
+		Insert(&messageNode{parent: "xixi", id: "caca"}).
+		Insert(&messageNode{parent: "lolo", id: "didi"})
 
-	tree.insert(&messageNode{parent: "xixi", id: "dudu"})
-	tree.insert(&messageNode{parent: "xixi", id: "caca"})
-
-	tree.insert(&messageNode{parent: "lolo", id: "didi"})
 	//tree.root.firstChild.printChildren()
 
-	tree.root.firstChild.nextSibling.nextSibling.printChildren()
+	//tree.root.firstChild.nextSibling.nextSibling.printChildren()
+	//fmt.Println(tree.root.firstChild.nextSibling.nextSibling.repChildren())
+	//fmt.Println(tree.root.firstChild.searchChild("caca"))
+	return tree
+}
+
+type Engine struct {
+	tree *MessageTree
+	node *messageNode
+}
+
+func NewEngine() *Engine {
+	tree := Fn()
+	return &Engine{
+		tree: tree,
+		node: tree.root,
+	}
+}
+func (e *Engine) Reply(message_id string) string {
+	node := e.node.searchOneLevel(message_id)
+	e.node = node
+	return node.content
 }
