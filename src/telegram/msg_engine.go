@@ -1,13 +1,25 @@
 package telegram
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"golang.org/x/sys/windows/svc/mgr"
+
+	"notion-agenda/settings"
+)
+
+type message struct {
+	id      string
+	parent  string
+	content string
+}
 
 type messageNode struct {
 	firstChild  *messageNode
 	nextSibling *messageNode
-	id          string
-	parent      string
-	content     string
+	message     message
 }
 
 //                           coco
@@ -15,7 +27,7 @@ type messageNode struct {
 // dudu(xixi)   caca(xixi)                               didi(lolo)
 
 func (n *messageNode) insert(node *messageNode) {
-	if n.id == node.parent {
+	if n.message.id == node.message.parent {
 		if n.firstChild == nil {
 			n.firstChild = node
 			return
@@ -28,7 +40,7 @@ func (n *messageNode) insert(node *messageNode) {
 		return
 	}
 
-	if n.firstChild.id == node.parent {
+	if n.firstChild.message.id == node.message.parent {
 		n.firstChild.insert(node)
 		return
 	}
@@ -37,14 +49,18 @@ func (n *messageNode) insert(node *messageNode) {
 	sibling := n.firstChild
 	for sibling.nextSibling != nil {
 		sibling = sibling.nextSibling
-		if sibling.id == node.parent {
+		if sibling.message.id == node.message.parent {
 			found = !found
 			break
 		}
 	}
 
 	if !found {
-		fmt.Printf("node %s without parent, given parent %s not found/n", node.id, node.parent)
+		fmt.Printf(
+			"node %s without parent, given parent %s not found/n",
+			node.message.id,
+			node.message.parent,
+		)
 		return
 	}
 
@@ -53,7 +69,7 @@ func (n *messageNode) insert(node *messageNode) {
 }
 
 func (n *messageNode) searchOneLevel(id string) *messageNode {
-	if n.id == id {
+	if n.message.id == id {
 		return n
 	}
 	return n.searchChild(id)
@@ -66,13 +82,13 @@ func (n *messageNode) searchChild(id string) *messageNode {
 
 	child := n.firstChild
 
-	if child.id == id {
+	if child.message.id == id {
 		return child
 	}
 
 	for child.nextSibling != nil {
 		child = child.nextSibling
-		if child.id == id {
+		if child.message.id == id {
 			return child
 		}
 	}
@@ -102,7 +118,7 @@ func (n *messageNode) repChildren() string {
 	rep := ""
 	count := 1
 	n.transverseInChildren(func(child *messageNode) {
-		rep += fmt.Sprintf("%d: %s\n", count, child.id)
+		rep += fmt.Sprintf("%d: %s\n", count, child.message.id)
 		count++
 	})
 	return rep
@@ -132,13 +148,13 @@ func (t *MessageTree) Search(id string) *messageNode {
 
 func Fn() *MessageTree {
 	tree := &MessageTree{}
-	tree.Insert(&messageNode{parent: "", id: "coco"}).
-		Insert(&messageNode{parent: "coco", id: "xixi"}).
-		Insert(&messageNode{parent: "coco", id: "veve"}).
-		Insert(&messageNode{parent: "coco", id: "lolo"}).
-		Insert(&messageNode{parent: "xixi", id: "dudu"}).
-		Insert(&messageNode{parent: "xixi", id: "caca"}).
-		Insert(&messageNode{parent: "lolo", id: "didi"})
+	tree.Insert(&messageNode{message: message{parent: "", id: "coco", content: "O que voce gostaria de saber?"}}).
+		Insert(&messageNode{message: message{parent: "coco", id: "faturas", content: "Fatura, escolha as opções"}}).
+		Insert(&messageNode{message: message{parent: "coco", id: "assinaturas", content: "Assinaturas, esolhas as opções"}}).
+		Insert(&messageNode{message: message{parent: "coco", id: "marvin", content: "Marvin, escolha o role"}}).
+		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas"}}).
+		Insert(&messageNode{message: message{parent: "faturas", id: "pagas"}}).
+		Insert(&messageNode{message: message{parent: "marvin", id: "coco"}})
 
 	//tree.root.firstChild.printChildren()
 
@@ -148,20 +164,93 @@ func Fn() *MessageTree {
 	return tree
 }
 
-type Engine struct {
-	tree *MessageTree
-	node *messageNode
+type commandEngine struct {
+	tree         *MessageTree
+	node         *messageNode
+	dialogLaunch bool
 }
 
-func NewEngine() *Engine {
-	tree := Fn()
-	return &Engine{
-		tree: tree,
-		node: tree.root,
+func (e *commandEngine) IsInitialized() bool {
+	return e.tree != nil || e.node != nil
+}
+
+func (e *commandEngine) Reply(messageID string) func(chatID int64) tgbotapi.MessageConfig {
+
+	func() {
+		if e.dialogLaunch {
+			e.node = e.node.searchOneLevel(messageID)
+			return
+		}
+		e.dialogLaunch = true
+	}()
+
+	buttons := make([]tgbotapi.KeyboardButton, 0)
+
+	e.node.transverseInChildren(func(child *messageNode) {
+		buttons = append(buttons, tgbotapi.NewKeyboardButton(child.message.id))
+	})
+
+	keyboard := tgbotapi.NewReplyKeyboard(buttons)
+
+	return func(chatID int64) tgbotapi.MessageConfig {
+		msg := tgbotapi.NewMessage(chatID, e.node.message.content)
+		msg.ReplyMarkup = keyboard
+		return msg
 	}
 }
-func (e *Engine) Reply(message_id string) string {
-	node := e.node.searchOneLevel(message_id)
-	e.node = node
-	return node.content
+
+type WorkFlowEngine struct {
+	client           *tgbotapi.BotAPI
+	notRecognizedMsg string
+	dialogLaunch     bool
+	unmarshalMsg     func(msg string) message
+	commandEngine    *commandEngine
+}
+
+func NewEngine() *WorkFlowEngine {
+	client, err := tgbotapi.NewBotAPI(settings.GETENV("TELEGRAM_TOKEN"))
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	commandTree := Fn()
+
+	return &WorkFlowEngine{
+		client:           client,
+		notRecognizedMsg: "I did not understand, can you repeat?",
+		dialogLaunch:     false,
+		commandEngine:    &commandEngine{tree: commandTree, node: commandTree.root},
+	}
+}
+
+func (e *WorkFlowEngine) HasPostback() bool {
+	return e.commandEngine.IsInitialized()
+}
+
+func (e *WorkFlowEngine) Chating(timeout int) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = timeout
+
+	updates := e.client.GetUpdatesChan(u)
+
+	for update := range updates {
+		if update.Message == nil {
+			continue
+		}
+
+		replyFn := e.commandEngine.Reply(update.Message.Text)
+		replyMsg := replyFn(update.Message.Chat.ID)
+
+		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
+		replyMsg.ReplyToMessageID = update.Message.MessageID
+
+		_, err := e.client.Send(replyMsg)
+		if err != nil {
+			log.Println(err)
+		}
+
+	}
+
 }
