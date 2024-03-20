@@ -17,7 +17,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	telegram.NewEngine().Chating(5)
+	telegram.NewEngine().Chating(30)
 }
 
 func Run() {

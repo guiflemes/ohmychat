@@ -5,7 +5,6 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"golang.org/x/sys/windows/svc/mgr"
 
 	"notion-agenda/settings"
 )
@@ -152,7 +151,7 @@ func Fn() *MessageTree {
 		Insert(&messageNode{message: message{parent: "coco", id: "faturas", content: "Fatura, escolha as opções"}}).
 		Insert(&messageNode{message: message{parent: "coco", id: "assinaturas", content: "Assinaturas, esolhas as opções"}}).
 		Insert(&messageNode{message: message{parent: "coco", id: "marvin", content: "Marvin, escolha o role"}}).
-		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas"}}).
+		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas", content: "ok, verificando"}}).
 		Insert(&messageNode{message: message{parent: "faturas", id: "pagas"}}).
 		Insert(&messageNode{message: message{parent: "marvin", id: "coco"}})
 
@@ -174,15 +173,27 @@ func (e *commandEngine) IsInitialized() bool {
 	return e.tree != nil || e.node != nil
 }
 
-func (e *commandEngine) Reply(messageID string) func(chatID int64) tgbotapi.MessageConfig {
+func (e *commandEngine) resolveMessageNode(messageID string) {
 
-	func() {
-		if e.dialogLaunch {
-			e.node = e.node.searchOneLevel(messageID)
+	if e.dialogLaunch {
+		node := e.node.searchOneLevel(messageID)
+
+		if node == nil {
+			e.node = e.tree.root
+			e.dialogLaunch = false
 			return
 		}
-		e.dialogLaunch = true
-	}()
+		e.node = node
+		return
+	}
+
+	e.dialogLaunch = true
+
+}
+
+func (e *commandEngine) Reply(messageID string) func(chatID int64) tgbotapi.MessageConfig {
+
+	e.resolveMessageNode(messageID)
 
 	buttons := make([]tgbotapi.KeyboardButton, 0)
 
@@ -242,7 +253,7 @@ func (e *WorkFlowEngine) Chating(timeout int) {
 		replyFn := e.commandEngine.Reply(update.Message.Text)
 		replyMsg := replyFn(update.Message.Chat.ID)
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		log.Printf("message %s", update.Message.Text)
 
 		replyMsg.ReplyToMessageID = update.Message.MessageID
 
