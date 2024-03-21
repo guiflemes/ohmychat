@@ -9,10 +9,21 @@ import (
 	"notion-agenda/settings"
 )
 
+type Action interface {
+	//checkar se precisa add nodes ah mais por exemplo:
+	//add faturas por add para virar opções dentro do node
+	Execute(message string) string
+}
+
 type message struct {
 	id      string
 	parent  string
 	content string
+	action  Action
+}
+
+func (m *message) HasAction() bool {
+	return m.action != nil
 }
 
 type messageNode struct {
@@ -145,13 +156,25 @@ func (t *MessageTree) Search(id string) *messageNode {
 	return t.root.searchChild(id)
 }
 
+type myAction struct{}
+
+func (m *myAction) Execute(message string) string {
+	invoices := ""
+	for i := 0; i <= 5; i++ {
+		invoice := fmt.Sprintf("www.minhasfaturas.com/vencidas/12%d", i)
+		invoices += invoice + "\n"
+	}
+	return invoices
+}
+
 func Fn() *MessageTree {
+
 	tree := &MessageTree{}
 	tree.Insert(&messageNode{message: message{parent: "", id: "coco", content: "O que voce gostaria de saber?"}}).
 		Insert(&messageNode{message: message{parent: "coco", id: "faturas", content: "Fatura, escolha as opções"}}).
 		Insert(&messageNode{message: message{parent: "coco", id: "assinaturas", content: "Assinaturas, esolhas as opções"}}).
 		Insert(&messageNode{message: message{parent: "coco", id: "marvin", content: "Marvin, escolha o role"}}).
-		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas", content: "ok, verificando"}}).
+		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas", content: "ok, verificando", action: &myAction{}}}).
 		Insert(&messageNode{message: message{parent: "faturas", id: "pagas"}}).
 		Insert(&messageNode{message: message{parent: "marvin", id: "coco"}})
 
@@ -167,6 +190,7 @@ type commandEngine struct {
 	tree         *MessageTree
 	node         *messageNode
 	dialogLaunch bool
+	actionQueue  ActionQueue
 }
 
 func (e *commandEngine) IsInitialized() bool {
@@ -191,9 +215,16 @@ func (e *commandEngine) resolveMessageNode(messageID string) {
 
 }
 
-func (e *commandEngine) Reply(messageID string) func(chatID int64) tgbotapi.MessageConfig {
+func (e *commandEngine) Reply(chatID int64, messageID string) tgbotapi.MessageConfig {
 
 	e.resolveMessageNode(messageID)
+
+	if e.node.message.HasAction() {
+		go func() {
+			content := e.node.message.action.Execute(messageID)
+			e.actionQueue <- tgbotapi.NewMessage(chatID, content)
+		}()
+	}
 
 	buttons := make([]tgbotapi.KeyboardButton, 0)
 
@@ -203,12 +234,13 @@ func (e *commandEngine) Reply(messageID string) func(chatID int64) tgbotapi.Mess
 
 	keyboard := tgbotapi.NewReplyKeyboard(buttons)
 
-	return func(chatID int64) tgbotapi.MessageConfig {
-		msg := tgbotapi.NewMessage(chatID, e.node.message.content)
-		msg.ReplyMarkup = keyboard
-		return msg
-	}
+	msg := tgbotapi.NewMessage(chatID, e.node.message.content)
+	msg.ReplyMarkup = keyboard
+	return msg
+
 }
+
+type ActionQueue chan tgbotapi.MessageConfig
 
 type WorkFlowEngine struct {
 	client           *tgbotapi.BotAPI
@@ -216,6 +248,7 @@ type WorkFlowEngine struct {
 	dialogLaunch     bool
 	unmarshalMsg     func(msg string) message
 	commandEngine    *commandEngine
+	actionQueue      ActionQueue
 }
 
 func NewEngine() *WorkFlowEngine {
@@ -226,12 +259,18 @@ func NewEngine() *WorkFlowEngine {
 	}
 
 	commandTree := Fn()
+	actionQueue := make(chan tgbotapi.MessageConfig)
 
 	return &WorkFlowEngine{
 		client:           client,
 		notRecognizedMsg: "I did not understand, can you repeat?",
 		dialogLaunch:     false,
-		commandEngine:    &commandEngine{tree: commandTree, node: commandTree.root},
+		commandEngine: &commandEngine{
+			tree:        commandTree,
+			node:        commandTree.root,
+			actionQueue: actionQueue,
+		},
+		actionQueue: actionQueue,
 	}
 }
 
@@ -250,8 +289,7 @@ func (e *WorkFlowEngine) Chating(timeout int) {
 			continue
 		}
 
-		replyFn := e.commandEngine.Reply(update.Message.Text)
-		replyMsg := replyFn(update.Message.Chat.ID)
+		replyMsg := e.commandEngine.Reply(update.Message.Chat.ID, update.Message.Text)
 
 		log.Printf("message %s", update.Message.Text)
 
@@ -262,6 +300,43 @@ func (e *WorkFlowEngine) Chating(timeout int) {
 			log.Println(err)
 		}
 
+	}
+
+}
+
+func (e *WorkFlowEngine) ChatingWithAction(timeout int) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = timeout
+
+	updates := e.client.GetUpdatesChan(u)
+
+	for {
+		select {
+		case update := <-updates:
+			e.replyMessage(update)
+
+		case action := <-e.actionQueue:
+			_, err := e.client.Send(action)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+
+}
+
+func (e *WorkFlowEngine) replyMessage(update tgbotapi.Update) {
+	if update.Message == nil {
+		return
+	}
+
+	replyMsg := e.commandEngine.Reply(update.Message.Chat.ID, update.Message.Text)
+	log.Printf("message %s", update.Message.Text)
+	replyMsg.ReplyToMessageID = update.Message.MessageID
+
+	_, err := e.client.Send(replyMsg)
+	if err != nil {
+		log.Println(err)
 	}
 
 }
