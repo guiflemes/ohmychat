@@ -1,194 +1,17 @@
 package telegram
 
 import (
-	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"notion-agenda/settings"
+	"notion-agenda/src/message"
 )
 
-type Action interface {
-	//checkar se precisa add nodes ah mais por exemplo:
-	//add faturas por add para virar opções dentro do node
-	Execute(message string) string
-}
-
-type message struct {
-	id      string
-	parent  string
-	content string
-	action  Action
-}
-
-func (m *message) HasAction() bool {
-	return m.action != nil
-}
-
-type messageNode struct {
-	firstChild  *messageNode
-	nextSibling *messageNode
-	message     message
-}
-
-//                           coco
-//     xixi (coco)                     veve(coco)     lolo(coco)
-// dudu(xixi)   caca(xixi)                               didi(lolo)
-
-func (n *messageNode) insert(node *messageNode) {
-	if n.message.id == node.message.parent {
-		if n.firstChild == nil {
-			n.firstChild = node
-			return
-		}
-		sibling := n.firstChild
-		for sibling.nextSibling != nil {
-			sibling = sibling.nextSibling
-		}
-		sibling.nextSibling = node
-		return
-	}
-
-	if n.firstChild.message.id == node.message.parent {
-		n.firstChild.insert(node)
-		return
-	}
-
-	found := false
-	sibling := n.firstChild
-	for sibling.nextSibling != nil {
-		sibling = sibling.nextSibling
-		if sibling.message.id == node.message.parent {
-			found = !found
-			break
-		}
-	}
-
-	if !found {
-		fmt.Printf(
-			"node %s without parent, given parent %s not found/n",
-			node.message.id,
-			node.message.parent,
-		)
-		return
-	}
-
-	sibling.insert(node)
-
-}
-
-func (n *messageNode) searchOneLevel(id string) *messageNode {
-	if n.message.id == id {
-		return n
-	}
-	return n.searchChild(id)
-}
-
-func (n *messageNode) searchChild(id string) *messageNode {
-	if n.firstChild == nil {
-		return nil
-	}
-
-	child := n.firstChild
-
-	if child.message.id == id {
-		return child
-	}
-
-	for child.nextSibling != nil {
-		child = child.nextSibling
-		if child.message.id == id {
-			return child
-		}
-	}
-
-	return nil
-}
-
-func (n *messageNode) transverseInChildren(fn func(child *messageNode)) {
-	if n.firstChild == nil {
-		return
-	}
-
-	child := n.firstChild
-	if child.nextSibling != nil {
-		for child != nil {
-			fn(child)
-			child = child.nextSibling
-		}
-		return
-	}
-
-	fn(child)
-
-}
-
-func (n *messageNode) repChildren() string {
-	rep := ""
-	count := 1
-	n.transverseInChildren(func(child *messageNode) {
-		rep += fmt.Sprintf("%d: %s\n", count, child.message.id)
-		count++
-	})
-	return rep
-}
-
-type MessageTree struct {
-	root *messageNode
-}
-
-func (t *MessageTree) Insert(node *messageNode) *MessageTree {
-	if t.root == nil {
-		t.root = node
-		return t
-	}
-
-	t.root.insert(node)
-	return t
-}
-
-func (t *MessageTree) Search(id string) *messageNode {
-	if t.root == nil {
-		return nil
-	}
-
-	return t.root.searchChild(id)
-}
-
-type myAction struct{}
-
-func (m *myAction) Execute(message string) string {
-	invoices := ""
-	for i := 0; i <= 5; i++ {
-		invoice := fmt.Sprintf("www.minhasfaturas.com/vencidas/12%d", i)
-		invoices += invoice + "\n"
-	}
-	return invoices
-}
-
-func Fn() *MessageTree {
-
-	tree := &MessageTree{}
-	tree.Insert(&messageNode{message: message{parent: "", id: "coco", content: "O que voce gostaria de saber?"}}).
-		Insert(&messageNode{message: message{parent: "coco", id: "faturas", content: "Fatura, escolha as opções"}}).
-		Insert(&messageNode{message: message{parent: "coco", id: "assinaturas", content: "Assinaturas, esolhas as opções"}}).
-		Insert(&messageNode{message: message{parent: "coco", id: "marvin", content: "Marvin, escolha o role"}}).
-		Insert(&messageNode{message: message{parent: "faturas", id: "atrasadas", content: "ok, verificando", action: &myAction{}}}).
-		Insert(&messageNode{message: message{parent: "faturas", id: "pagas"}}).
-		Insert(&messageNode{message: message{parent: "marvin", id: "coco"}})
-
-	//tree.root.firstChild.printChildren()
-
-	//tree.root.firstChild.nextSibling.nextSibling.printChildren()
-	//fmt.Println(tree.root.firstChild.nextSibling.nextSibling.repChildren())
-	//fmt.Println(tree.root.firstChild.searchChild("caca"))
-	return tree
-}
-
 type commandEngine struct {
-	tree         *MessageTree
-	node         *messageNode
+	tree         *message.MessageTree
+	node         *message.MessageNode
 	dialogLaunch bool
 	actionQueue  ActionQueue
 }
@@ -200,10 +23,10 @@ func (e *commandEngine) IsInitialized() bool {
 func (e *commandEngine) resolveMessageNode(messageID string) {
 
 	if e.dialogLaunch {
-		node := e.node.searchOneLevel(messageID)
+		node := e.node.SearchOneLevel(messageID)
 
 		if node == nil {
-			e.node = e.tree.root
+			e.node = e.tree.Root()
 			e.dialogLaunch = false
 			return
 		}
@@ -219,22 +42,23 @@ func (e *commandEngine) Reply(chatID int64, messageID string) tgbotapi.MessageCo
 
 	e.resolveMessageNode(messageID)
 
-	if e.node.message.HasAction() {
+	if e.node.Message().HasAction() {
 		go func() {
-			content := e.node.message.action.Execute(messageID)
+			action := e.node.Message().Action
+			content := action.Execute(messageID)
 			e.actionQueue <- tgbotapi.NewMessage(chatID, content)
 		}()
 	}
 
 	buttons := make([]tgbotapi.KeyboardButton, 0)
 
-	e.node.transverseInChildren(func(child *messageNode) {
-		buttons = append(buttons, tgbotapi.NewKeyboardButton(child.message.id))
+	e.node.TransverseInChildren(func(child *message.MessageNode) {
+		buttons = append(buttons, tgbotapi.NewKeyboardButton(child.Message().ID()))
 	})
 
 	keyboard := tgbotapi.NewReplyKeyboard(buttons)
 
-	msg := tgbotapi.NewMessage(chatID, e.node.message.content)
+	msg := tgbotapi.NewMessage(chatID, e.node.Message().Content)
 	msg.ReplyMarkup = keyboard
 	return msg
 
@@ -246,7 +70,7 @@ type WorkFlowEngine struct {
 	client           *tgbotapi.BotAPI
 	notRecognizedMsg string
 	dialogLaunch     bool
-	unmarshalMsg     func(msg string) message
+	unmarshalMsg     func(msg string) message.Message
 	commandEngine    *commandEngine
 	actionQueue      ActionQueue
 }
@@ -258,7 +82,7 @@ func NewEngine() *WorkFlowEngine {
 		log.Panic(err)
 	}
 
-	commandTree := Fn()
+	commandTree := message.Fn()
 	actionQueue := make(chan tgbotapi.MessageConfig)
 
 	return &WorkFlowEngine{
@@ -267,7 +91,7 @@ func NewEngine() *WorkFlowEngine {
 		dialogLaunch:     false,
 		commandEngine: &commandEngine{
 			tree:        commandTree,
-			node:        commandTree.root,
+			node:        commandTree.Root(),
 			actionQueue: actionQueue,
 		},
 		actionQueue: actionQueue,
@@ -279,32 +103,6 @@ func (e *WorkFlowEngine) HasPostback() bool {
 }
 
 func (e *WorkFlowEngine) Chating(timeout int) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = timeout
-
-	updates := e.client.GetUpdatesChan(u)
-
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		replyMsg := e.commandEngine.Reply(update.Message.Chat.ID, update.Message.Text)
-
-		log.Printf("message %s", update.Message.Text)
-
-		replyMsg.ReplyToMessageID = update.Message.MessageID
-
-		_, err := e.client.Send(replyMsg)
-		if err != nil {
-			log.Println(err)
-		}
-
-	}
-
-}
-
-func (e *WorkFlowEngine) ChatingWithAction(timeout int) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = timeout
 
