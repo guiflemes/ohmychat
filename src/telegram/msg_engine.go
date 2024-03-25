@@ -5,8 +5,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"notion-agenda/settings"
-	"notion-agenda/src/message"
+	"oh-my-chat/settings"
+	"oh-my-chat/src/message"
 )
 
 type commandEngine struct {

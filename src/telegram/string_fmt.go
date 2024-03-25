@@ -2,8 +2,8 @@ package telegram
 
 import (
 	"fmt"
-	"notion-agenda/src/notion"
-	"notion-agenda/src/utils"
+	"oh-my-chat/src/notion"
+	"oh-my-chat/src/utils"
 	"strings"
 	"text/template"
 )

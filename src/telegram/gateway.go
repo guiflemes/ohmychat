@@ -2,7 +2,7 @@ package telegram
 
 import (
 	"log"
-	"notion-agenda/settings"
+	"oh-my-chat/settings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

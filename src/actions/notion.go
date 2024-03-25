@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"notion-agenda/settings"
-	"notion-agenda/src/notion"
-	"notion-agenda/src/notion/app"
-	"notion-agenda/src/notion/app/query"
-	"notion-agenda/src/utils"
+	"oh-my-chat/settings"
+	"oh-my-chat/src/notion"
+	"oh-my-chat/src/notion/app"
+	"oh-my-chat/src/notion/app/query"
+	"oh-my-chat/src/utils"
 )
 
 type NotionCredentions struct {

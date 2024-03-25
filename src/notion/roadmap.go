@@ -3,7 +3,7 @@ package notion
 import (
 	"time"
 
-	"notion-agenda/src/utils"
+	"oh-my-chat/src/utils"
 )
 
 type Priority string

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"notion-agenda/src/notion"
+	"oh-my-chat/src/notion"
 )
 
 type Pendendy struct {

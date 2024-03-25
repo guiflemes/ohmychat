@@ -3,7 +3,7 @@ package notion
 import (
 	"log"
 
-	"notion-agenda/src/service"
+	"oh-my-chat/src/service"
 )
 
 type RoadMapGetter interface {

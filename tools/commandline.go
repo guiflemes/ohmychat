@@ -3,7 +3,7 @@ package tools
 import (
 	"bufio"
 	"fmt"
-	"notion-agenda/src/service"
+	"oh-my-chat/src/service"
 	"os"
 	"os/signal"
 	"strings"

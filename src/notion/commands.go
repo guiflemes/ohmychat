@@ -3,7 +3,7 @@ package notion
 import (
 	"github.com/google/uuid"
 
-	"notion-agenda/src/service"
+	"oh-my-chat/src/service"
 )
 
 type StudyInspectCmd struct {

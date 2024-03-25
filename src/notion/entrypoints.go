@@ -1,6 +1,6 @@
 package notion
 
-import "notion-agenda/src/service"
+import "oh-my-chat/src/service"
 
 type Publisher interface {
 	Publish(message service.Message)

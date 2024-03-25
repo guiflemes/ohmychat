@@ -3,7 +3,7 @@ package message
 import (
 	"fmt"
 
-	"notion-agenda/src/actions"
+	"oh-my-chat/src/actions"
 )
 
 type Action interface {
@@ -180,11 +180,11 @@ func Fn() *MessageTree {
 	n := actions.NewNotionActions().PedencyGetter
 	tree := &MessageTree{}
 	tree.Insert(&MessageNode{message: Message{parent: "", id: "coco", Content: "O que voce gostaria de saber?"}}).
-		Insert(&MessageNode{message: Message{parent: "coco", id: "faturas", Content: "Fatura, escolha as opções"}}).
+		Insert(&MessageNode{message: Message{parent: "coco", id: "tarefas", Content: "Tarefas, escolha as opções"}}).
 		Insert(&MessageNode{message: Message{parent: "coco", id: "assinaturas", Content: "Assinaturas, esolhas as opções"}}).
 		Insert(&MessageNode{message: Message{parent: "coco", id: "marvin", Content: "Marvin, escolha o role"}}).
-		Insert(&MessageNode{message: Message{parent: "faturas", id: "atrasadas", Content: "ok, verificando", Action: n}}).
-		Insert(&MessageNode{message: Message{parent: "faturas", id: "pagas"}}).
+		Insert(&MessageNode{message: Message{parent: "tarefas", id: "pendencias", Content: "ok, verificando", Action: n}}).
+		Insert(&MessageNode{message: Message{parent: "tarefas", id: "pagas"}}).
 		Insert(&MessageNode{message: Message{parent: "marvin", id: "coco"}})
 
 	return tree

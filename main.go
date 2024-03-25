@@ -5,9 +5,9 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"notion-agenda/src/notion"
-	"notion-agenda/src/service"
-	"notion-agenda/src/telegram"
+	"oh-my-chat/src/notion"
+	"oh-my-chat/src/service"
+	"oh-my-chat/src/telegram"
 )
 
 func main() {

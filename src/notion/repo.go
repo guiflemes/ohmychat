@@ -2,7 +2,7 @@ package notion
 
 import (
 	"context"
-	"notion-agenda/settings"
+	"oh-my-chat/settings"
 	"strconv"
 	"time"
 

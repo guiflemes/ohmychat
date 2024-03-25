@@ -2,8 +2,8 @@ package telegram
 
 import (
 	"log"
-	"notion-agenda/src/notion"
-	"notion-agenda/src/service"
+	"oh-my-chat/src/notion"
+	"oh-my-chat/src/service"
 )
 
 type PendencyFormatter interface {
