@@ -5,7 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"oh-my-chat/src/telegram"
+	"oh-my-chat/src/utils"
 )
 
 func main() {
@@ -15,5 +15,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	telegram.NewEngine().Chating(30)
+	//telegram.NewEngine().Chating(30)
+	utils.TesteFn()
 }
