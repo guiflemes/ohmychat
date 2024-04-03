@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+
+	"golang.org/x/text/cases"
 )
 
 type TagTranspiler struct {
@@ -119,7 +121,25 @@ func (p *ParseType) Float64(value float64) string { return strconv.FormatFloat(v
 
 func (p *ParseType) Boolean(value bool) string { return strconv.FormatBool(value) }
 
-// TODO SLICE, MAP, SLICE[MAP]
+func Unchain(m map[string]any, chain *TagChain) any {
+	tag := chain
+	var value any
+	for tag.Next != nil {
+
+		switch tag.Kind {
+		case Field:
+			fmt.Println("field")
+			value = m[tag.Key]
+		case Array:
+			fmt.Println("array")
+		case Object:
+			fmt.Println("obj")
+		}
+		tag = tag.Next
+	}
+	return value
+}
+
 func TesteFn() {
 	m := map[string]any{
 		"string": "xixi",
@@ -131,14 +151,43 @@ func TesteFn() {
 		"int":   123,
 		"float": 123.2,
 		"slice": []int{1, 2, 3},
+		"map_slice": []map[string]any{
+			{"lala": "coco"},
+			{"xixi": "coco"},
+		},
 	}
 	tags := TagsTranspiler{
 		//TagTranspiler{Tags: []string{"string"}},
-		//TagTranspiler{Tags: []string{"bool"}},
+		//TagTranspiler{Tags: []string{"bool"}}
 		//TagTranspiler{Tags: []string{"int"}},
-		//TagTranspiler{Tags: []string{"float"}},
+		TagTranspiler{Tags: []string{"float"}},
 		TagTranspiler{Tags: []string{"map", "string"}},
 	}
 	s := FnTag(m, tags)
 	fmt.Println(s)
+}
+
+type TagType string
+
+const (
+	Array  TagType = "array"
+	Object TagType = "object"
+	Field  TagType = "field"
+)
+
+// Create a chain of key like this: key -> object -> array -> object -> key
+type TagChain struct {
+	Key  string
+	Kind TagType
+	Next *TagChain
+}
+
+func (t *TagChain) String() string {
+	str := ""
+	chain := t
+	for chain.Next != nil {
+		str += string(chain.Kind) + t.Key + " --> "
+		chain = chain.Next
+	}
+	return str + string(chain.Kind)
 }
