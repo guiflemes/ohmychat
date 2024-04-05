@@ -1,9 +1,11 @@
 package actions
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/iv-p/mapaccess"
 
 	"oh-my-chat/src/utils"
 )
@@ -16,7 +18,10 @@ type (
 		Get(url string) (HttpResp, error)
 	}
 
-	HttpResp interface{ String() string }
+	HttpResp interface {
+		String() string
+		Body() []byte
+	}
 )
 
 type restyHttpClientAdapter struct {
@@ -33,6 +38,10 @@ type restyRespAdapter struct {
 
 func (r *restyRespAdapter) String() string {
 	return r.resp.String()
+}
+
+func (r *restyRespAdapter) Body() []byte {
+	return r.resp.Body()
 }
 
 type restyReqAdapter struct {
@@ -52,22 +61,29 @@ func (r *restyReqAdapter) Get(url string) (HttpResp, error) {
 	return &restyRespAdapter{resp: resp}, nil
 }
 
-func NewHttpGetAction(url, auth string) *httpGetAction {
+func NewHttpGetAction(url, auth string, tag *TagAcess) *httpGetAction {
 
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
 	return &httpGetAction{
-		url:    url,
-		auth:   auth,
-		client: client_adapter,
+		url:       url,
+		auth:      auth,
+		client:    client_adapter,
+		tag:       tag,
+		mapAccess: mapaccess.Get,
 	}
 }
 
+type TagAcess struct {
+	Key string
+}
+
 type httpGetAction struct {
-	url    string
-	auth   string
-	client HttpClient
-	tags   utils.TagsTranspiler
+	url       string
+	auth      string
+	client    HttpClient
+	tag       *TagAcess
+	mapAccess MapAcesss
 }
 
 func (a *httpGetAction) Execute(message string) string {
@@ -85,9 +101,30 @@ func (a *httpGetAction) Execute(message string) string {
 		return "some error ocurred"
 	}
 
-	if a.tags == nil {
+	if a.tag == nil {
 		return resp.String()
 	}
 
-	return ""
+	var deserialised interface{}
+	err = json.Unmarshal(resp.Body(), &deserialised)
+
+	if err != nil {
+		log.Println("Unmarshal: ", err)
+		return "some error ocurred"
+	}
+
+	if a.mapAccess == nil {
+		log.Println("map acess is not set")
+		return "some error ocurred"
+	}
+
+	value, err := a.mapAccess(deserialised, a.tag.Key)
+	if err != nil {
+		log.Println("MapAcesss: ", err)
+		return "some error ocurred"
+	}
+
+	return utils.Parse(value)
 }
+
+type MapAcesss func(data interface{}, key string) (interface{}, error)

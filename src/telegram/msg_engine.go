@@ -82,7 +82,7 @@ func NewEngine() *WorkFlowEngine {
 		log.Panic(err)
 	}
 
-	commandTree := message.Fn()
+	commandTree := message.PokemonFlow()
 	actionQueue := make(chan tgbotapi.MessageConfig)
 
 	return &WorkFlowEngine{
