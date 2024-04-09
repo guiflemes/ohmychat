@@ -1,5 +1,7 @@
 package utils
 
+import "context"
+
 func Filter[T any](values []T, fn func(T) bool) []T {
 	result := make([]T, 0)
 	for _, value := range values {
@@ -28,4 +30,9 @@ func Map[T any, U any](original []T, fn func(T) U) []U {
 	}
 
 	return newSlice
+}
+
+func GetUserFromContext(ctx context.Context) *User {
+	user := ctx.Value(UserKey).(*User)
+	return user
 }

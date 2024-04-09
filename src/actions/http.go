@@ -3,12 +3,13 @@ package actions
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
+	"errors"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/iv-p/mapaccess"
+	"go.uber.org/zap"
 
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/utils"
 )
 
@@ -68,11 +69,12 @@ func NewHttpGetAction(url, auth string, tag *TagAcess) *httpGetAction {
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
 	return &httpGetAction{
-		url:       url,
-		auth:      auth,
-		client:    client_adapter,
-		tag:       tag,
-		mapAccess: mapaccess.Get,
+		url:            url,
+		auth:           auth,
+		client:         client_adapter,
+		tag:            tag,
+		mapAccess:      mapaccess.Get,
+		getCurrentUser: utils.GetUserFromContext,
 	}
 }
 
@@ -81,16 +83,23 @@ type TagAcess struct {
 }
 
 type httpGetAction struct {
-	url       string
-	auth      string
-	client    HttpClient
-	tag       *TagAcess
-	mapAccess MapAcesss
+	url            string
+	auth           string
+	client         HttpClient
+	tag            *TagAcess
+	mapAccess      MapAcesss
+	getCurrentUser func(context.Context) *utils.User
 }
 
 func (a *httpGetAction) Execute(ctx context.Context, message string) string {
-	user := ctx.Value(utils.UserKey).(*utils.User)
-	fmt.Println("user:", user)
+	user := a.getCurrentUser(ctx)
+
+	log := logger.Logger.With(
+		zap.String("action", "get_http"),
+		zap.String("url", a.url),
+		zap.String("provider", user.Provider),
+		zap.String("user_id", user.ID),
+	)
 
 	req := a.client.R()
 
@@ -102,7 +111,7 @@ func (a *httpGetAction) Execute(ctx context.Context, message string) string {
 		SetHeader("Accept", "application/json").Get(a.url)
 
 	if err != nil {
-		log.Println("error httpGetAction", err)
+		log.Error("Failed to fetch url", zap.Error(err))
 		return "some error ocurred"
 	}
 
@@ -114,21 +123,22 @@ func (a *httpGetAction) Execute(ctx context.Context, message string) string {
 	err = json.Unmarshal(resp.Body(), &deserialised)
 
 	if err != nil {
-		log.Println("Unmarshal: ", err)
+		log.Error("Failed to Unmarshal response", zap.Error(err))
 		return "some error ocurred"
 	}
 
 	if a.mapAccess == nil {
-		log.Println("map acess is not set")
+		log.Error("MapAcesss is nill", zap.Error(errors.New("MapAccess should not be nil")))
 		return "some error ocurred"
 	}
 
 	value, err := a.mapAccess(deserialised, a.tag.Key)
 	if err != nil {
-		log.Println("MapAcesss: ", err)
+		log.Error("Failed to access key", zap.Error(err))
 		return "some error ocurred"
 	}
 
+	log.Info("action executed sucessfully")
 	return utils.Parse(value)
 }
 

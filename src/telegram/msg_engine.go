@@ -2,12 +2,15 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 
 	"oh-my-chat/settings"
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/utils"
 )
@@ -147,8 +150,14 @@ func (e *WorkFlowEngine) replyMessage(update tgbotapi.Update) {
 
 	ctx := context.WithValue(context.Background(), utils.UserKey, user)
 
+	logger.Logger.Info(
+		"Message received",
+		zap.String("platfotm", "telegram"),
+		zap.String("user_id", user.ID),
+		zap.String("user_name", fmt.Sprintf("%s %s", user.FirstName, user.LastName)),
+	)
+
 	replyMsg := e.commandEngine.Reply(ctx, update.Message.Chat.ID, update.Message.Text)
-	log.Printf("message %s", update.Message.Text)
 	replyMsg.ReplyToMessageID = update.Message.MessageID
 
 	_, err := e.client.Send(replyMsg)
