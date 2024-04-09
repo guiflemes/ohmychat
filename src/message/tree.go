@@ -1,13 +1,14 @@
 package message
 
 import (
+	"context"
 	"fmt"
 )
 
 type Action interface {
 	//checkar se precisa add nodes ah mais por exemplo:
 	//add faturas por add para virar opções dentro do node
-	Execute(message string) string
+	Execute(ctx context.Context, message string) string
 }
 
 type Message struct {

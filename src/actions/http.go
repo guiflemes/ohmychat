@@ -1,7 +1,9 @@
 package actions
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/go-resty/resty/v2"
@@ -86,7 +88,10 @@ type httpGetAction struct {
 	mapAccess MapAcesss
 }
 
-func (a *httpGetAction) Execute(message string) string {
+func (a *httpGetAction) Execute(ctx context.Context, message string) string {
+	user := ctx.Value(utils.UserKey).(*utils.User)
+	fmt.Println("user:", user)
+
 	req := a.client.R()
 
 	if a.auth != "" {

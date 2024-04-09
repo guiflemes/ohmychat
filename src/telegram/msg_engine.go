@@ -1,12 +1,15 @@
 package telegram
 
 import (
+	"context"
 	"log"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"oh-my-chat/settings"
 	"oh-my-chat/src/message"
+	"oh-my-chat/src/utils"
 )
 
 type commandEngine struct {
@@ -38,14 +41,17 @@ func (e *commandEngine) resolveMessageNode(messageID string) {
 
 }
 
-func (e *commandEngine) Reply(chatID int64, messageID string) tgbotapi.MessageConfig {
-
+func (e *commandEngine) Reply(
+	ctx context.Context,
+	chatID int64,
+	messageID string,
+) tgbotapi.MessageConfig {
 	e.resolveMessageNode(messageID)
 
 	if e.node.Message().HasAction() {
 		go func() {
 			action := e.node.Message().Action
-			content := action.Execute(messageID)
+			content := action.Execute(ctx, messageID)
 			e.actionQueue <- tgbotapi.NewMessage(chatID, content)
 		}()
 	}
@@ -70,7 +76,6 @@ type WorkFlowEngine struct {
 	client           *tgbotapi.BotAPI
 	notRecognizedMsg string
 	dialogLaunch     bool
-	unmarshalMsg     func(msg string) message.Message
 	commandEngine    *commandEngine
 	actionQueue      ActionQueue
 }
@@ -128,7 +133,21 @@ func (e *WorkFlowEngine) replyMessage(update tgbotapi.Update) {
 		return
 	}
 
-	replyMsg := e.commandEngine.Reply(update.Message.Chat.ID, update.Message.Text)
+	var user *utils.User
+	sentFrom := update.SentFrom()
+	if sentFrom != nil {
+		user = &utils.User{
+			ID:        strconv.FormatInt(sentFrom.ID, 10),
+			Provider:  "telegram",
+			FirstName: sentFrom.FirstName,
+			LastName:  sentFrom.LastName,
+			Username:  sentFrom.UserName,
+		}
+	}
+
+	ctx := context.WithValue(context.Background(), utils.UserKey, user)
+
+	replyMsg := e.commandEngine.Reply(ctx, update.Message.Chat.ID, update.Message.Text)
 	log.Printf("message %s", update.Message.Text)
 	replyMsg.ReplyToMessageID = update.Message.MessageID
 
