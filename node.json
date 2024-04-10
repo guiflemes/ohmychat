@@ -1,0 +1,51 @@
+{
+  	"name": "MyFirstFlow",
+  	"key": "my_first_flow",
+  	"properties": {
+  	  1: {
+  		"id": "parent",
+      "parent": "",
+  		"content": "Ola tudo bem, quais suas escolhas?",
+  		"action": null
+      }
+  	  2: {
+  		"id": "child1",
+  		"parent": "parent",
+  		"content": "Escolha 1",
+  		"action": {
+        "type": "http_get",
+  		  "object": {
+          "url":"www.mysite.com",
+          "auth": "Bearer: u73dnidhiadha8928391wadhai",
+          "tag_access": "name.value[0]"
+        }
+  	  },
+  	  3: {
+      "id": "child2",
+  		"parent": "parent",
+  		"content": "Escolha 2",
+  		"action": {
+        "type": "http_get",
+  		  "object": {
+          "url":"www.mysite2.com",
+          "auth": "Bearer: u73dnidhiadha8928391wadhai",
+          "tag_access": "name.value[1]"
+        }
+  	  }
+  	  }
+  	},
+  	"relationships": [
+  	  {
+  		"source_card_id": 1,
+  		"target_card_id": 2,
+  		"relationship_type": "button_to_image",
+  		"additional_details": "Option 1 selected"
+  	  },
+  	  {
+  		"source_card_id": 1,
+  		"target_card_id": 3,
+  		"relationship_type": "button_to_coupon",
+  		"additional_details": "Option 2 selected"
+  	  }
+  	]
+    }
