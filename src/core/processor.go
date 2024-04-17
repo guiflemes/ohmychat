@@ -1,10 +1,11 @@
 package core
 
 import (
+	"context"
+
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/message"
 	"oh-my-chat/src/models"
 )
 
@@ -16,9 +17,15 @@ type WorkflowGetter interface {
 	GetFlow(channelName string) Workflow
 }
 
+type ActionQueue interface {
+	Consume()
+	Put(ctx context.Context, actionPair ActionReplyPair)
+}
+
 type Engine interface {
 	Name() string
-	Match(models.Message, <-chan models.Message)
+	HandleMessage(models.Message, chan<- models.Message)
+	GetActionQueue() ActionQueue
 }
 
 type Engines []Engine
@@ -32,13 +39,13 @@ func (e Engines) GetTarget(target string) Engine {
 	return nil
 }
 
-type Matcher struct {
+type processor struct {
 	workflowGetter WorkflowGetter
 	workflow       Workflow
 	engines        Engines
 }
 
-func (m *Matcher) Match(inputMsg <-chan models.Message, outputMsg chan<- models.Message) {
+func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- models.Message) {
 	for {
 		message := <-inputMsg
 
@@ -48,7 +55,7 @@ func (m *Matcher) Match(inputMsg <-chan models.Message, outputMsg chan<- models.
 	}
 }
 
-func (m *Matcher) handleWorkflow(msg models.Message, output chan<- models.Message) {
+func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Message) {
 	if m.workflow == nil {
 		logger.Logger.Error(
 			"Work flow not found",
@@ -67,4 +74,6 @@ func (m *Matcher) handleWorkflow(msg models.Message, output chan<- models.Messag
 		output <- msg
 		return
 	}
+
+	engine.HandleMessage(msg, output)
 }
