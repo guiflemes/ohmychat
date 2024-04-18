@@ -26,6 +26,7 @@ type Engine interface {
 	Name() string
 	HandleMessage(models.Message, chan<- models.Message)
 	GetActionQueue() ActionQueue
+	Config(workflow Workflow)
 }
 
 type Engines []Engine
@@ -43,6 +44,13 @@ type processor struct {
 	workflowGetter WorkflowGetter
 	workflow       Workflow
 	engines        Engines
+}
+
+func NewProcessor(workflowGetter WorkflowGetter, engines Engines) *processor {
+	return &processor{
+		workflowGetter: workflowGetter,
+		engines:        engines,
+	}
 }
 
 func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- models.Message) {

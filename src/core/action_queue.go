@@ -15,17 +15,21 @@ type ActionReplyPair struct {
 	input   models.Message
 }
 
-type GoActionQueue struct {
+type goActionQueue struct {
 	actionPair chan ActionReplyPair
 	ctx        context.Context
 }
 
-func (q *GoActionQueue) Put(ctx context.Context, actionPair ActionReplyPair) {
+func NewGoActionQueue() *goActionQueue {
+	return &goActionQueue{}
+}
+
+func (q *goActionQueue) Put(ctx context.Context, actionPair ActionReplyPair) {
 	q.actionPair <- actionPair
 	q.ctx = ctx
 }
 
-func (q *GoActionQueue) Consume() {
+func (q *goActionQueue) Consume() {
 
 	go func() {
 		for {
@@ -35,7 +39,7 @@ func (q *GoActionQueue) Consume() {
 
 				if err != nil {
 					logger.Logger.Error("Error Handling Action",
-						zap.String("context", "GoActionQueue"),
+						zap.String("context", "goActionQueue"),
 						zap.Error(err),
 					)
 				}
@@ -49,14 +53,14 @@ func (q *GoActionQueue) Consume() {
 	}()
 }
 
-func (q *GoActionQueue) brodcastAll() {
+func (q *goActionQueue) brodcastAll() {
 	for {
 		select {
 		case actionPair := <-q.actionPair:
 			actionPair.input.Output = "Server is shutting down. Please reconnect later"
 
 			logger.Logger.Warn("Shutting Down",
-				zap.String("context", "GoActionQueue"),
+				zap.String("context", "goActionQueue"),
 				zap.String("message", "context done"),
 			)
 

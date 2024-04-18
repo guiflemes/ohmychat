@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
 
 type Action interface {
-	//checkar se precisa add nodes ah mais por exemplo:
-	//add faturas por add para virar opções dentro do node
 	Handle(ctx context.Context, message *models.Message) error
 }
 
@@ -171,7 +172,10 @@ type GuidedResponseEngine struct {
 	node         *MessageNode
 	dialogLaunch bool
 	actionQueue  ActionQueue
+	setup        bool
 }
+
+func (e *GuidedResponseEngine) Config(workflow Workflow) {}
 
 func (e *GuidedResponseEngine) resolveMessageNode(messageID string) {
 
@@ -202,6 +206,15 @@ func (e *GuidedResponseEngine) Name() string {
 func (e *GuidedResponseEngine) HandleMessage(input models.Message, output chan<- models.Message) {
 	// TODO fix context
 	ctx := context.Background()
+
+	if !e.setup {
+		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))
+		response := &input
+		response.Output = "some error ocurred, please contant admin"
+		output <- *response
+		return
+	}
+
 	e.resolveMessageNode(input.ID)
 
 	if e.node.Message().HasAction() {

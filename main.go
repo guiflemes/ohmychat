@@ -5,7 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"oh-my-chat/src/telegram"
+	"oh-my-chat/src/core"
 )
 
 func main() {
@@ -15,5 +15,13 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	telegram.NewEngine().Chating(30)
+}
+
+func Run() {
+	actionQueue := core.NewGoActionQueue()
+  actionQueue.Consume()
+  
+  guidedEngine = &core.GuidedResponseEngine{}
+
+  core.NewProcessor(workflowGetter core.WorkflowGetter, engines core.Engines)
 }
