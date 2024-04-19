@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/zap"
 
@@ -17,25 +18,24 @@ type ActionReplyPair struct {
 
 type goActionQueue struct {
 	actionPair chan ActionReplyPair
-	ctx        context.Context
 }
 
 func NewGoActionQueue() *goActionQueue {
-	return &goActionQueue{}
+	return &goActionQueue{actionPair: make(chan ActionReplyPair)}
 }
 
-func (q *goActionQueue) Put(ctx context.Context, actionPair ActionReplyPair) {
+func (q *goActionQueue) Put(actionPair ActionReplyPair) {
 	q.actionPair <- actionPair
-	q.ctx = ctx
 }
 
-func (q *goActionQueue) Consume() {
+func (q *goActionQueue) Consume(ctx context.Context) {
 
 	go func() {
 		for {
 			select {
+
 			case actionPair := <-q.actionPair:
-				err := actionPair.action.Handle(q.ctx, &actionPair.input)
+				err := actionPair.action.Handle(ctx, &actionPair.input)
 
 				if err != nil {
 					logger.Logger.Error("Error Handling Action",
@@ -46,8 +46,11 @@ func (q *goActionQueue) Consume() {
 
 				actionPair.replyTo <- actionPair.input
 
-			case <-q.ctx.Done():
+			case <-ctx.Done():
+				fmt.Println("Context done")
 				q.brodcastAll()
+
+			default:
 			}
 		}
 	}()

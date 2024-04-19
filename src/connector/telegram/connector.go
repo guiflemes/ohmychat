@@ -7,12 +7,25 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
+	"oh-my-chat/src/connector"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
+	"oh-my-chat/src/utils"
 )
 
 type telegram struct {
 	client *tgbotapi.BotAPI
+}
+
+func NewTelegramConnector(bot *models.Bot) (connector.Connector, error) {
+	client, err := tgbotapi.NewBotAPI(bot.TelegramConfig.Token)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &telegram{client: client}, nil
+
 }
 
 func (t *telegram) Acquire(input chan<- models.Message) {
@@ -30,7 +43,7 @@ func (t *telegram) Acquire(input chan<- models.Message) {
 		return
 	}
 
-	fmt.Println("botuser", user)
+	fmt.Println("botuser", user) // TODO -> put on metadata
 
 	updates := t.client.GetUpdatesChan(u)
 
@@ -56,8 +69,8 @@ func (t *telegram) Acquire(input chan<- models.Message) {
 
 		message := models.NewMessage()
 		message.Type = models.MsgTypeUnknown
-		message.Remote = models.Telegram
-		message.RemoteID = strconv.Itoa(m.MessageID)
+		message.Connector = models.Telegram
+		message.ConnectorID = strconv.Itoa(m.MessageID)
 		message.Input = m.Text
 		message.Service = models.MsgServiceChat
 		message.ChannelID = strconv.FormatInt(m.Chat.ID, 10)
@@ -78,10 +91,23 @@ func (t *telegram) Dispatch(message models.Message) {
 	}
 
 	msg := tgbotapi.NewMessage(chatID, message.Output)
+	t.formatResponse(&msg, message)
 
 	_, err := t.client.Send(msg)
 	if err != nil {
 		logger.Logger.Error("unable to send message", zap.Error(err),
 			zap.String("context", "telegram_client"))
+	}
+}
+
+func (t *telegram) formatResponse(responseMsg *tgbotapi.MessageConfig, message models.Message) {
+	switch message.ResponseType {
+	case models.OptionResponse:
+		buttons := utils.Map(message.Options, func(t string) tgbotapi.KeyboardButton {
+			return tgbotapi.NewKeyboardButton(t)
+		})
+		keyboard := tgbotapi.NewReplyKeyboard(buttons)
+		responseMsg.ReplyMarkup = keyboard
+	default:
 	}
 }

@@ -52,7 +52,7 @@ type pedencyGetter struct {
 	config UserRepoConfig
 }
 
-func (p *pedencyGetter) Execute(ctx context.Context, userID string) string {
+func (p *pedencyGetter) Handler(ctx context.Context, userID string) string {
 	credentions := p.config.GetNotionCredentions(userID)
 	tasks, err := p.app.Queries.PendencyTasks.Handler(
 		ctx,

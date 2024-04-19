@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/logger"
+	"oh-my-chat/src/models"
 	"oh-my-chat/src/utils"
 )
 
@@ -69,12 +70,11 @@ func NewHttpGetAction(url, auth string, tag *TagAcess) *httpGetAction {
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
 	return &httpGetAction{
-		url:            url,
-		auth:           auth,
-		client:         client_adapter,
-		tag:            tag,
-		mapAccess:      mapaccess.Get,
-		getCurrentUser: utils.GetUserFromContext,
+		url:       url,
+		auth:      auth,
+		client:    client_adapter,
+		tag:       tag,
+		mapAccess: mapaccess.Get,
 	}
 }
 
@@ -82,23 +82,26 @@ type TagAcess struct {
 	Key string
 }
 
-type httpGetAction struct {
-	url            string
-	auth           string
-	client         HttpClient
-	tag            *TagAcess
-	mapAccess      MapAcesss
-	getCurrentUser func(context.Context) *utils.User
+type SomeError struct{}
+
+func (e *SomeError) Error() string {
+	return "some error has ocurred"
 }
 
-func (a *httpGetAction) Execute(ctx context.Context, message string) string {
-	user := a.getCurrentUser(ctx)
+type httpGetAction struct {
+	url       string
+	auth      string
+	client    HttpClient
+	tag       *TagAcess
+	mapAccess MapAcesss
+}
+
+func (a *httpGetAction) Handle(ctx context.Context, message *models.Message) error {
 
 	log := logger.Logger.With(
 		zap.String("action", "get_http"),
 		zap.String("url", a.url),
-		zap.String("provider", user.Provider),
-		zap.String("user_id", user.ID),
+		zap.String("provider", string(message.Connector)),
 	)
 
 	req := a.client.R()
@@ -112,11 +115,12 @@ func (a *httpGetAction) Execute(ctx context.Context, message string) string {
 
 	if err != nil {
 		log.Error("Failed to fetch url", zap.Error(err))
-		return "some error ocurred"
+		return &SomeError{}
 	}
 
 	if a.tag == nil {
-		return resp.String()
+		message.Output = resp.String()
+		return nil
 	}
 
 	var deserialised interface{}
@@ -124,22 +128,23 @@ func (a *httpGetAction) Execute(ctx context.Context, message string) string {
 
 	if err != nil {
 		log.Error("Failed to Unmarshal response", zap.Error(err))
-		return "some error ocurred"
+		return &SomeError{}
 	}
 
 	if a.mapAccess == nil {
 		log.Error("MapAcesss is nill", zap.Error(errors.New("MapAccess should not be nil")))
-		return "some error ocurred"
+		return &SomeError{}
 	}
 
 	value, err := a.mapAccess(deserialised, a.tag.Key)
 	if err != nil {
 		log.Error("Failed to access key", zap.Error(err))
-		return "some error ocurred"
+		return &SomeError{}
 	}
 
 	log.Info("action executed sucessfully")
-	return utils.Parse(value)
+	message.Output = utils.Parse(value)
+	return nil
 }
 
 type MapAcesss func(data interface{}, key string) (interface{}, error)

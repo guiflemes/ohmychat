@@ -18,8 +18,8 @@ type WorkflowGetter interface {
 }
 
 type ActionQueue interface {
-	Consume()
-	Put(ctx context.Context, actionPair ActionReplyPair)
+	Consume(context.Context)
+	Put(actionPair ActionReplyPair)
 }
 
 type Engine interface {
@@ -27,6 +27,7 @@ type Engine interface {
 	HandleMessage(models.Message, chan<- models.Message)
 	GetActionQueue() ActionQueue
 	Config(workflow Workflow)
+	IsReady() bool
 }
 
 type Engines []Engine
@@ -60,6 +61,8 @@ func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- mod
 		if m.workflow == nil {
 			m.workflow = m.workflowGetter.GetFlow(message.ChannelName)
 		}
+
+		m.handleWorkflow(message, outputMsg)
 	}
 }
 
@@ -67,7 +70,7 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 	if m.workflow == nil {
 		logger.Logger.Error(
 			"Work flow not found",
-			zap.String("platfotm", string(msg.Remote)),
+			zap.String("platfotm", string(msg.Connector)), zap.String("context", "processor"),
 		)
 
 		msg.Error = "some error has ocurred"
@@ -76,11 +79,23 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 	}
 
 	engine := m.engines.GetTarget(m.workflow.Engine())
+
 	if engine == nil {
-		logger.Logger.Error("Engine not found", zap.String("engine", m.workflow.Engine()))
+		logger.Logger.Error(
+			"Engine not found",
+			zap.String("engine", m.workflow.Engine()), zap.String("context", "processor"),
+		)
 		msg.Error = "some error has ocurred"
 		output <- msg
 		return
+	}
+
+	if !engine.IsReady() {
+		logger.Logger.Info(
+			"The engine is not ready. Starting to prepare it",
+			zap.String("engine", engine.Name()),
+		)
+		engine.Config(m.workflow)
 	}
 
 	engine.HandleMessage(msg, output)

@@ -20,10 +20,16 @@ const (
 	MsgServiceChat
 )
 
-type MessageRemote string
+type MessageConnector string
 
 const (
-	Telegram MessageRemote = "telegram"
+	Telegram MessageConnector = "telegram"
+)
+
+type ResponseType int
+
+const (
+	OptionResponse ResponseType = iota
 )
 
 type Meta struct {
@@ -43,19 +49,21 @@ func (m *Meta) Get(name string) string {
 }
 
 type Message struct {
-	ID          string
-	Type        MessageType
-	Service     MessageService
-	Remote      MessageRemote
-	RemoteID    string
-	ChannelID   string
-	ChannelName string
-	Input       string
-	Output      string
-	Error       string
-	StartTime   int64
-	EndTime     int64
-	Meta        *Meta
+	ID           string
+	Type         MessageType
+	Service      MessageService
+	Connector    MessageConnector
+	ConnectorID  string
+	ChannelID    string
+	ChannelName  string
+	Input        string
+	Output       string
+	Error        string
+	Options      []string
+	StartTime    int64
+	EndTime      int64
+	ResponseType ResponseType
+	Meta         *Meta
 }
 
 func NewMessage() Message {

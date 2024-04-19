@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"oh-my-chat/src/actions"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
@@ -167,7 +168,7 @@ func (t *MessageTree) Search(id string) *MessageNode {
 	return t.root.searchChild(id)
 }
 
-type GuidedResponseEngine struct {
+type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
 	dialogLaunch bool
@@ -175,9 +176,23 @@ type GuidedResponseEngine struct {
 	setup        bool
 }
 
-func (e *GuidedResponseEngine) Config(workflow Workflow) {}
+func NewGuidedResponseEngine(actionQueue ActionQueue) *guidedResponseEngine {
+	return &guidedResponseEngine{actionQueue: actionQueue}
+}
 
-func (e *GuidedResponseEngine) resolveMessageNode(messageID string) {
+func (e *guidedResponseEngine) IsReady() bool {
+	return e.setup
+}
+
+func (e *guidedResponseEngine) Config(workflow Workflow) {
+	// TODO -> resolve mock depedency
+	flow := PokemonFlow()
+	e.tree = flow
+	e.node = flow.Root()
+	e.setup = true
+}
+
+func (e *guidedResponseEngine) resolveMessageNode(messageID string) {
 
 	if e.dialogLaunch {
 		node := e.node.SearchOneLevel(messageID)
@@ -195,17 +210,15 @@ func (e *GuidedResponseEngine) resolveMessageNode(messageID string) {
 
 }
 
-func (e *GuidedResponseEngine) GetActionQueue() ActionQueue {
+func (e *guidedResponseEngine) GetActionQueue() ActionQueue {
 	return e.actionQueue
 }
 
-func (e *GuidedResponseEngine) Name() string {
+func (e *guidedResponseEngine) Name() string {
 	return "guided"
 }
 
-func (e *GuidedResponseEngine) HandleMessage(input models.Message, output chan<- models.Message) {
-	// TODO fix context
-	ctx := context.Background()
+func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<- models.Message) {
 
 	if !e.setup {
 		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))
@@ -215,16 +228,65 @@ func (e *GuidedResponseEngine) HandleMessage(input models.Message, output chan<-
 		return
 	}
 
-	e.resolveMessageNode(input.ID)
+	e.resolveMessageNode(input.Input)
 
 	if e.node.Message().HasAction() {
 		actionPair := ActionReplyPair{replyTo: output, action: e.node.message.Action, input: input}
 		queue := e.GetActionQueue()
-		queue.Put(ctx, actionPair)
-		return
+		queue.Put(actionPair)
 	}
 
+	options := make([]string, 0)
+	e.node.TransverseInChildren(func(child *MessageNode) {
+		options = append(options, child.Message().ID())
+	})
+
 	response := &input
-	response.Output = "SomeMessage"
+	response.Output = e.node.Message().Content
+	response.Options = options
+	response.ResponseType = models.OptionResponse
 	output <- *response
+}
+
+func PokemonFlow() *MessageTree {
+	getPikachu := actions.NewHttpGetAction(
+		"https://pokeapi.co/api/v2/pokemon/pikachu",
+		"",
+		&actions.TagAcess{Key: "abilities[1].ability.name"})
+
+	getCharizard := actions.NewHttpGetAction(
+		"https://pokeapi.co/api/v2/pokemon/charizard",
+		"",
+		&actions.TagAcess{Key: "abilities[1].ability.name"})
+
+	tree := &MessageTree{}
+	tree.Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "",
+				id:      "parent",
+				Content: "A habilidade de qual pokemon voce gostaria de saber?",
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "parent",
+				id:      "pikachu",
+				Content: "Lets go, e a habilidade do pokemon mais querido do Ashe é...",
+				Action:  getPikachu,
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "parent",
+				id:      "charizard",
+				Content: "A habilidade do melhor de todos é...",
+				Action:  getCharizard,
+			},
+		},
+	)
+
+	return tree
 }
