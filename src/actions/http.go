@@ -97,7 +97,7 @@ type HttpGetAction struct {
 }
 
 func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) error {
-
+	//create someting to replace values in url for exempe www.test.com/{invoice_id}  -> message.Input = "invoice_id"
 	log := logger.Logger.With(
 		zap.String("action", "get_http"),
 		zap.String("url", a.url),
