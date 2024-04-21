@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"go.uber.org/zap"
 
@@ -168,16 +169,28 @@ func (t *MessageTree) Search(id string) *MessageNode {
 	return t.root.searchChild(id)
 }
 
+type ChatRoutingRule int
+
+const (
+	Fallback ChatRoutingRule = iota
+	KeepContext
+	HumanHandOff
+)
+
 type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
 	dialogLaunch bool
 	actionQueue  ActionQueue
 	setup        bool
+	chatRouting  ChatRoutingRule
 }
 
 func NewGuidedResponseEngine(actionQueue ActionQueue) *guidedResponseEngine {
-	return &guidedResponseEngine{actionQueue: actionQueue}
+	return &guidedResponseEngine{
+		actionQueue: actionQueue,
+		chatRouting: Fallback,
+	}
 }
 
 func (e *guidedResponseEngine) IsReady() bool {
@@ -192,14 +205,30 @@ func (e *guidedResponseEngine) Config(workflow Workflow) {
 	e.setup = true
 }
 
+func (e *guidedResponseEngine) route() {
+
+	if e.chatRouting == Fallback {
+		e.node = e.tree.Root()
+	}
+
+	if e.chatRouting == KeepContext || e.chatRouting == HumanHandOff {
+		logger.Logger.Warn(
+			"routing not implemented, setting default 'Fallback'",
+			zap.String("context", "guided_engine"),
+			zap.Int("routing", int(e.chatRouting)),
+		)
+		e.node = e.tree.Root()
+	}
+
+}
+
 func (e *guidedResponseEngine) resolveMessageNode(messageID string) {
 
 	if e.dialogLaunch {
 		node := e.node.SearchOneLevel(messageID)
 
 		if node == nil {
-			e.node = e.tree.Root()
-			e.dialogLaunch = false
+			e.route()
 			return
 		}
 		e.node = node
@@ -249,15 +278,13 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 }
 
 func PokemonFlow() *MessageTree {
-	getPikachu := actions.NewHttpGetAction(
-		"https://pokeapi.co/api/v2/pokemon/pikachu",
-		"",
-		&actions.TagAcess{Key: "abilities[1].ability.name"})
 
-	getCharizard := actions.NewHttpGetAction(
-		"https://pokeapi.co/api/v2/pokemon/charizard",
-		"",
-		&actions.TagAcess{Key: "abilities[1].ability.name"})
+	ability := func(name string) *actions.HttpGetAction {
+		return actions.NewHttpGetAction(
+			fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", name),
+			"",
+			&actions.TagAcess{Key: "abilities[1].ability.name"})
+	}
 
 	tree := &MessageTree{}
 	tree.Insert(
@@ -265,25 +292,76 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "",
 				id:      "parent",
-				Content: "A habilidade de qual pokemon voce gostaria de saber?",
+				Content: "Qual categegoria de poken você gostaria de saber a habilidade?",
 			},
 		},
 	).Insert(
 		&MessageNode{
 			message: Message{
 				parent:  "parent",
+				id:      "chatoes",
+				Content: "Esses pokemons são os mais chatos que existe",
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "parent",
+				id:      "fodoes",
+				Content: "Esses pokemons são pika, top das galaxias",
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "parent",
+				id:      "mee",
+				Content: "Esses são os pokemons são muito sem sal",
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "chatoes",
 				id:      "pikachu",
-				Content: "Lets go, e a habilidade do pokemon mais querido do Ashe é...",
-				Action:  getPikachu,
+				Content: "Ai a abilidade do mais chato de todos",
+				Action:  ability("pikachu"),
 			},
 		},
 	).Insert(
 		&MessageNode{
 			message: Message{
-				parent:  "parent",
+				parent:  "chatoes",
+				id:      "butterfree",
+				Content: "Olha essa habilidade que nada ver",
+				Action:  ability("butterfree"),
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "fodoes",
 				id:      "charizard",
-				Content: "A habilidade do melhor de todos é...",
-				Action:  getCharizard,
+				Content: "Dentre os pokemons do Ashe essa é melhor habilidade",
+				Action:  ability("charizard"),
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "fodoes",
+				id:      "mewtwo",
+				Content: "Olha que poder foda, o melhor",
+				Action:  ability("mewtwo"),
+			},
+		},
+	).Insert(
+		&MessageNode{
+			message: Message{
+				parent:  "mee",
+				id:      "squirtle",
+				Content: "Esse aqui é bem mais ou menos",
+				Action:  ability("squirtle"),
 			},
 		},
 	)

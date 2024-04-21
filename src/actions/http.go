@@ -65,11 +65,11 @@ func (r *restyReqAdapter) Get(url string) (HttpResp, error) {
 	return &restyRespAdapter{resp: resp}, nil
 }
 
-func NewHttpGetAction(url, auth string, tag *TagAcess) *httpGetAction {
+func NewHttpGetAction(url, auth string, tag *TagAcess) *HttpGetAction {
 
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
-	return &httpGetAction{
+	return &HttpGetAction{
 		url:       url,
 		auth:      auth,
 		client:    client_adapter,
@@ -88,7 +88,7 @@ func (e *SomeError) Error() string {
 	return "some error has ocurred"
 }
 
-type httpGetAction struct {
+type HttpGetAction struct {
 	url       string
 	auth      string
 	client    HttpClient
@@ -96,7 +96,7 @@ type httpGetAction struct {
 	mapAccess MapAcesss
 }
 
-func (a *httpGetAction) Handle(ctx context.Context, message *models.Message) error {
+func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) error {
 
 	log := logger.Logger.With(
 		zap.String("action", "get_http"),
