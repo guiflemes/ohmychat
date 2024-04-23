@@ -1,25 +1,25 @@
-package models
+package schemas
 
 import (
 	"encoding/json"
 	"fmt"
 )
 
-type Properties map[string]Property
+type Schemas map[string]Schema
 
-type PropertyType string
+type SchemaType string
 
-type Property interface {
+type Schema interface {
 	GetID() string
-	GetType() PropertyType
+	GetType() SchemaType
 }
 
-func (p *Properties) UnmarshalJSON(data []byte) error {
+func (p *Schemas) UnmarshalJSON(data []byte) error {
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	props, err := parseProperties(raw)
+	props, err := parseSchemas(raw)
 
 	if err != nil {
 		return err
@@ -29,19 +29,19 @@ func (p *Properties) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func parseProperties(raw map[string]any) (map[string]Property, error) {
-	result := make(map[string]Property)
+func parseSchemas(raw map[string]any) (map[string]Schema, error) {
+	result := make(map[string]Schema)
 
 	for k, v := range raw {
-		switch rawProperty := v.(type) {
+		switch rawSchema := v.(type) {
 		case map[string]any:
-			p, err := decodeProperty(rawProperty)
+			p, err := decodeSchema(rawSchema)
 
 			if err != nil {
 				return nil, err
 			}
 
-			b, err := json.Marshal(rawProperty)
+			b, err := json.Marshal(rawSchema)
 			if err != nil {
 				return nil, err
 			}
@@ -59,13 +59,15 @@ func parseProperties(raw map[string]any) (map[string]Property, error) {
 	return result, nil
 }
 
-func decodeProperty(raw map[string]any) (Property, error) {
-	var p Property
-	switch PropertyType(raw["type"].(string)) {
-	case PropertyTypeHttpGet:
-		p = &HttpGetProperty{}
+func decodeSchema(raw map[string]any) (Schema, error) {
+	var p Schema
+	switch SchemaType(raw["type"].(string)) {
+	case SchemaTypeHttpGet:
+		p = &HttpGetSchema{}
 	default:
 		return nil, fmt.Errorf("unsupported property type: %s", raw["type"].(string))
 	}
 	return p, nil
 }
+
+func parseGuidedEgineSchema() {}

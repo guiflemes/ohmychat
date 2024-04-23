@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"go.uber.org/zap"
 
@@ -19,6 +18,7 @@ type Action interface {
 type Message struct {
 	id      string
 	parent  string
+	name    string
 	Content string
 	Action  Action
 }
@@ -265,9 +265,12 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 		queue.Put(actionPair)
 	}
 
-	options := make([]string, 0)
+	options := make([]models.Option, 0)
 	e.node.TransverseInChildren(func(child *MessageNode) {
-		options = append(options, child.Message().ID())
+		options = append(
+			options,
+			models.Option{ID: child.Message().ID(), Name: child.Message().name},
+		)
 	})
 
 	response := &input
@@ -292,6 +295,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "",
 				id:      "parent",
+				name:    "Inicial",
 				Content: "Qual categegoria de poken você gostaria de saber a habilidade?",
 			},
 		},
@@ -300,6 +304,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "parent",
 				id:      "chatoes",
+				name:    "Chatões",
 				Content: "Esses pokemons são os mais chatos que existe",
 			},
 		},
@@ -308,6 +313,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "parent",
 				id:      "fodoes",
+				name:    "Fodões",
 				Content: "Esses pokemons são pika, top das galaxias",
 			},
 		},
@@ -316,6 +322,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "parent",
 				id:      "mee",
+				name:    "Mee",
 				Content: "Esses são os pokemons são muito sem sal",
 			},
 		},
@@ -324,6 +331,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "chatoes",
 				id:      "pikachu",
+				name:    "Pikachu",
 				Content: "Ai a abilidade do mais chato de todos",
 				Action:  ability("pikachu"),
 			},
@@ -333,6 +341,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "chatoes",
 				id:      "butterfree",
+				name:    "Butterfree",
 				Content: "Olha essa habilidade que nada ver",
 				Action:  ability("butterfree"),
 			},
@@ -342,6 +351,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "fodoes",
 				id:      "charizard",
+				name:    "Charizard",
 				Content: "Dentre os pokemons do Ashe essa é melhor habilidade",
 				Action:  ability("charizard"),
 			},
@@ -351,6 +361,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "fodoes",
 				id:      "mewtwo",
+				name:    "Mewtwo",
 				Content: "Olha que poder foda, o melhor",
 				Action:  ability("mewtwo"),
 			},
@@ -360,6 +371,7 @@ func PokemonFlow() *MessageTree {
 			message: Message{
 				parent:  "mee",
 				id:      "squirtle",
+				name:    "Squirtle",
 				Content: "Esse aqui é bem mais ou menos",
 				Action:  ability("squirtle"),
 			},

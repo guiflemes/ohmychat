@@ -48,6 +48,11 @@ func (m *Meta) Get(name string) string {
 	return value
 }
 
+type Option struct {
+	ID   string
+	Name string
+}
+
 type Message struct {
 	ID           string
 	Type         MessageType
@@ -59,7 +64,7 @@ type Message struct {
 	Input        string
 	Output       string
 	Error        string
-	Options      []string
+	Options      []Option
 	StartTime    int64
 	EndTime      int64
 	ResponseType ResponseType

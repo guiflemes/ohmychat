@@ -59,11 +59,12 @@ func (t *telegram) Acquire(input chan<- models.Message) {
 			m = update.ChannelPost
 		}
 
-		if m == nil {
-			continue
+		if update.CallbackQuery != nil {
+			m = update.CallbackQuery.Message
+			m.Text = update.CallbackData()
 		}
 
-		if m.From != nil && m.From.ID == user.ID {
+		if m == nil {
 			continue
 		}
 
@@ -103,10 +104,10 @@ func (t *telegram) Dispatch(message models.Message) {
 func (t *telegram) formatResponse(responseMsg *tgbotapi.MessageConfig, message models.Message) {
 	switch message.ResponseType {
 	case models.OptionResponse:
-		buttons := utils.Map(message.Options, func(t string) tgbotapi.KeyboardButton {
-			return tgbotapi.NewKeyboardButton(t)
+		buttons := utils.Map(message.Options, func(o models.Option) tgbotapi.InlineKeyboardButton {
+			return tgbotapi.NewInlineKeyboardButtonData(o.Name, o.ID)
 		})
-		keyboard := tgbotapi.NewReplyKeyboard(buttons)
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(buttons)
 		responseMsg.ReplyMarkup = keyboard
 	default:
 	}
