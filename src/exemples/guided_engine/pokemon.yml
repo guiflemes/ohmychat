@@ -5,63 +5,62 @@
         intent: parent
         options:
           - name: Esses são os pokemons chatões
-            intent: chatoes
+            key: chatoes
           - name: Esses são os pokemons fodões
-            intent: fodoes
+            key: fodoes
       - name: Chatões
-        type: options
-        intent: chatoes
+        key: chatoes
         options:
           - name: Habilidades do pikachu
-            intent: pikachu
+            key: pikachu
             action:
               type: http_get
               object: 
                 url: "https://pokeapi.co/api/v2/pokemon/pikachu"
                 method: GET
                 headers:
-                  Authorization: ""
-                  Content-Type: "application/json"
+                  authorization: ""
+                  content_type: "application/json"
                 response_field:
                   "abilities[1].ability.name"
           - name: Habiliades do butterfree
-            intent: butterfree    
+            key: butterfree    
             action:
               type: http_get
               object: 
                 url: "https://pokeapi.co/api/v2/pokemon/butterfree"
                 method: GET
                 headers:
-                  Authorization: ""
-                  Content-Type: "application/json"
+                  authorization: ""
+                  content_type: "application/json"
                 response_field:
                   "abilities[1].ability.name"
       - name: Fodões
         type: options
-        intent: fodoes
+        key: fodoes
         options:
           - name: Habilidades do charizard
-            intent: charizard
+            key: charizard
             action:
               type: http_get
               object: 
                 url: "https://pokeapi.co/api/v2/pokemon/charizard"
                 method: GET
                 headers:
-                  Authorization: ""
-                  Content-Type: "application/json"
+                  authorization: ""
+                  content_type: "application/json"
                 response_field:
                   "abilities[1].ability.name"
           - name: Habiliades do mewtwo
-            intent: mewtwo
+            key: mewtwo
             action:
               type: http_get
               object: 
                 url: "https://pokeapi.co/api/v2/pokemon/mewtwo"
                 method: GET
                 headers:
-                  Authorization: ""
-                  Content-Type: "application/json"
+                  authorization: ""
+                  content_type: "application/json"
                 response_field:
                   "abilities[1].ability.name"
           
