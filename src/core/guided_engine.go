@@ -37,6 +37,22 @@ type MessageNode struct {
 	message     Message
 }
 
+func NewMessageNode(
+	id string,
+	parent string,
+	name string,
+	content string,
+	action Action,
+) *MessageNode {
+	return &MessageNode{message: Message{
+		parent:  parent,
+		id:      id,
+		name:    name,
+		Content: content,
+		Action:  action,
+	}}
+}
+
 func (n *MessageNode) Message() Message {
 	return n.message
 }

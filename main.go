@@ -9,6 +9,7 @@ import (
 
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
+	"oh-my-chat/src/schemas"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	Run()
+
+	schemas.ReadYml()
 
 }
 

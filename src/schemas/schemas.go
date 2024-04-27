@@ -2,52 +2,49 @@ package schemas
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"log"
+	"os"
+
+	"gopkg.in/yaml.v3"
 
 	"oh-my-chat/src/actions"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
 )
 
-type Schemas map[string]Schema
-
-type SchemaType string
-
-type Schema interface {
-	GetID() string
-	GetType() SchemaType
+type ModelTest struct {
+	Engine  string               `yaml:"engine"`
+	Intents []models.IntentModel `yaml:"intents"`
 }
 
-func (p *Schemas) UnmarshalJSON(data []byte) error {
-	var raw map[string]any
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
+func ReadYml() {
+
+	data, err := os.ReadFile("src/examples/guided_engine/pokemon.yml")
+	if err != nil {
+		log.Fatalf("error reading YAML file: %v", err)
 	}
-	props, err := parseSchemas(raw)
+
+	var model ModelTest
+
+	if err := yaml.Unmarshal(data, &model); err != nil {
+		log.Fatalf("error Unmarshal YAML file: %v", err)
+	}
+
+	tree, err := parseGuidedSchemas(model.Intents)
 
 	if err != nil {
-		return err
+		log.Fatalf("error parsing MessageTree: %v", err)
 	}
 
-	*p = props
-	return nil
+	fmt.Println(tree.Search("chatoes").RepChildren())
 }
 
-// type Action interface {Handle(ctx context.Context, message *Message)}
-//           engine
-//  guided            rule
-//  options           intent
-//  action            action
-
-func parseGuidedSchemas(intents []Intent) (map[string]Schema, error) {
-	result := make(map[string]Schema)
+func parseGuidedSchemas(intents []models.IntentModel) (*core.MessageTree, error) {
+	tree := &core.MessageTree{}
 
 	for _, intent := range intents {
 		for _, option := range intent.Options {
-			if &option.Action == nil {
-				continue
-			}
 
 			a, err := decodeAction(option.Action)
 
@@ -55,36 +52,60 @@ func parseGuidedSchemas(intents []Intent) (map[string]Schema, error) {
 				return nil, err
 			}
 
+			if tree.Root() == nil {
+				tree.Insert(core.NewMessageNode(intent.Key, "", intent.Name, "", a))
+			}
+
+			node := core.NewMessageNode(option.Key, intent.Key, option.Name, option.Content, a)
+			tree.Insert(node)
 		}
 	}
 
-	return result, nil
+	return tree, nil
 }
 
-var Actions = map[models.ModelType]func(action models.ActionModel) (core.Action, bool){
-	models.TypeHttpGetModel: func(action models.ActionModel) (core.Action, bool) {
-		model, ok := action.Object.(models.HttpGetModel)
-		if !ok {
-			return nil, ok
+var Actions = map[models.ModelType]func(rawModel map[string]any) (core.Action, error){
+	models.TypeHttpGetModel: func(rawModel map[string]any) (core.Action, error) {
+
+		b, err := json.Marshal(rawModel)
+		if err != nil {
+			return nil, err
+		}
+
+		var model models.HttpGetModel
+		err = json.Unmarshal(b, &model)
+		if err != nil {
+			return nil, err
 		}
 		//TODO pass models arg
-		return actions.NewHttpGetAction(model.Url, "", nil), ok
+
+		return actions.NewHttpGetAction(model.Url, "", nil), nil
 
 	},
 }
 
-func decodeAction(model models.ActionModel) (core.Action, error) {
-	builder, ok := Actions[models.ModelType(model.Type)]
+func decodeAction(model *models.ActionModel) (core.Action, error) {
 
+	if model == nil {
+		return nil, nil
+
+	}
+
+	builder, ok := Actions[models.ModelType(model.Type)]
 	if !ok {
 		return nil, fmt.Errorf("unsupported model type: %s", model.Type)
 	}
 
-	action, ok := builder(model)
+	switch rawModel := model.Object.(type) {
+	case map[string]any:
+		action, err := builder(rawModel)
+		if err != nil {
+			return nil, err
+		}
+		return action, nil
 
-	if !ok {
-		return nil, fmt.Errorf("unsupported type swicth: %s", model.Type)
+	default:
+		return nil, fmt.Errorf("unsupported model format %T", model.Object)
 	}
 
-	return action, nil
 }

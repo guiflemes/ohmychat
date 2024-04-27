@@ -1,14 +1,12 @@
 package models
 
 type Headers struct {
-	Authorization string `json:"authorization"`
-	ContentType   string `json:"content_type"`
+	Authorization string `yaml:"authorization" json:"authorization"`
+	ContentType   string `yaml:"content_type"  json:"content_type"`
 }
 
 type HttpGetModel struct {
-	ID            string    `json:"id"`
-	Type          ModelType `json:"type"`
-	Url           string    `json:"url"`
-	Headers       Headers   `json:"headers"`
-	ResponseField string    `json:"response_field"`
+	Url           string  `yaml:"url"            json:"url"`
+	Headers       Headers `yaml:"headers"        json:"headers"`
+	ResponseField string  `yaml:"response_field" json:"response_field"`
 }

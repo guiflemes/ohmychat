@@ -1,0 +1,56 @@
+engine: guided_response
+intents:
+  - name: Menu Principal
+    key: parent
+    options:
+      - name: Esses são os pokemons chatões
+        key: chatoes
+      - name: Esses são os pokemons fodões
+        key: fodoes
+  - name: Chatões
+    key: chatoes
+    options:
+      - name: Habilidades do pikachu
+        key: pikachu
+        action:
+          type: http_get
+          object:
+            url: https://pokeapi.co/api/v2/pokemon/pikachu
+            headers:
+              authorization: ""
+              content_type: application/json
+            response_field: abilities[1].ability.name
+      - name: Habiliades do butterfree
+        key: butterfree    
+        action:
+          type: http_get
+          object: 
+            url: https://pokeapi.co/api/v2/pokemon/butterfree
+            headers:
+              authorization: ""
+              content_type: application/json
+            response_field: abilities[1].ability.name
+  - name: Fodões
+    key: fodoes
+    options:
+      - name: Habilidades do charizard
+        key: charizard
+        action:
+          type: http_get
+          object: 
+            url: https://pokeapi.co/api/v2/pokemon/charizard
+            headers:
+              authorization: ""
+              content_type: application/json
+            response_field: abilities[1].ability.name
+      - name: Habiliades do mewtwo
+        key: mewtwo
+        action:
+          type: http_get
+          object: 
+            url: https://pokeapi.co/api/v2/pokemon/mewtwo
+            headers:
+              authorization: ""
+              content_type: application/json
+            response_field: abilities[1].ability.name
+
