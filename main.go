@@ -33,7 +33,7 @@ func Run() {
 	bot := models.NewBot(models.Telegram)
 	actionQueue := core.NewGoActionQueue()
 	actionQueue.Consume(ctx)
-	guidedEngine := core.NewGuidedResponseEngine(actionQueue, &adapters.LocalFileRepository{})
+	guidedEngine := core.NewGuidedResponseEngine(actionQueue, adapters.NewLoadFileRepository())
 
 	processor := core.NewProcessor(adapters.NewMemoryChatbotRepo(), core.Engines{guidedEngine})
 	connector := core.NewMuitiChannelConnector(bot)

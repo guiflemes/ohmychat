@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"oh-my-chat/src/actions"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
@@ -307,105 +306,4 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 	response.Options = options
 	response.ResponseType = models.OptionResponse
 	output <- *response
-}
-
-func PokemonFlow() *MessageTree {
-
-	ability := func(name string) *actions.HttpGetAction {
-		return actions.NewHttpGetAction(
-			fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", name),
-			"",
-			&actions.TagAcess{Key: "abilities[1].ability.name"})
-	}
-
-	tree := &MessageTree{}
-	tree.Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "",
-				id:      "parent",
-				name:    "Inicial",
-				Content: "Qual categegoria de poken você gostaria de saber a habilidade?",
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "parent",
-				id:      "chatoes",
-				name:    "Chatões",
-				Content: "Esses pokemons são os mais chatos que existe",
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "parent",
-				id:      "fodoes",
-				name:    "Fodões",
-				Content: "Esses pokemons são pika, top das galaxias",
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "parent",
-				id:      "mee",
-				name:    "Mee",
-				Content: "Esses são os pokemons são muito sem sal",
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "chatoes",
-				id:      "pikachu",
-				name:    "Pikachu",
-				Content: "Ai a abilidade do mais chato de todos",
-				Action:  ability("pikachu"),
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "chatoes",
-				id:      "butterfree",
-				name:    "Butterfree",
-				Content: "Olha essa habilidade que nada ver",
-				Action:  ability("butterfree"),
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "fodoes",
-				id:      "charizard",
-				name:    "Charizard",
-				Content: "Dentre os pokemons do Ashe essa é melhor habilidade",
-				Action:  ability("charizard"),
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "fodoes",
-				id:      "mewtwo",
-				name:    "Mewtwo",
-				Content: "Olha que poder foda, o melhor",
-				Action:  ability("mewtwo"),
-			},
-		},
-	).Insert(
-		&MessageNode{
-			message: Message{
-				parent:  "mee",
-				id:      "squirtle",
-				name:    "Squirtle",
-				Content: "Esse aqui é bem mais ou menos",
-				Action:  ability("squirtle"),
-			},
-		},
-	)
-
-	return tree
 }

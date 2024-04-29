@@ -3,39 +3,13 @@ package schemas
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-
-	"gopkg.in/yaml.v3"
 
 	"oh-my-chat/src/actions"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
 )
 
-func ReadYml() {
-
-	data, err := os.ReadFile("src/examples/guided_engine/pokemon.yml")
-	if err != nil {
-		log.Fatalf("error reading YAML file: %v", err)
-	}
-
-	var model models.WorkflowGuidedModel
-
-	if err := yaml.Unmarshal(data, &model); err != nil {
-		log.Fatalf("error Unmarshal YAML file: %v", err)
-	}
-
-	tree, err := parseGuidedSchemas(model.Intents)
-
-	if err != nil {
-		log.Fatalf("error parsing MessageTree: %v", err)
-	}
-
-	fmt.Println(tree.Search("chatoes").RepChildren())
-}
-
-func parseGuidedSchemas(intents []models.IntentModel) (*core.MessageTree, error) {
+func ParseGuidedSchemas(intents []models.IntentModel) (*core.MessageTree, error) {
 	tree := &core.MessageTree{}
 
 	for _, intent := range intents {
@@ -48,7 +22,7 @@ func parseGuidedSchemas(intents []models.IntentModel) (*core.MessageTree, error)
 			}
 
 			if tree.Root() == nil {
-				tree.Insert(core.NewMessageNode(intent.Key, "", intent.Name, "", a))
+				tree.Insert(core.NewMessageNode(intent.Key, "", intent.Name, intent.Name, a))
 			}
 
 			node := core.NewMessageNode(option.Key, intent.Key, option.Name, option.Content, a)
@@ -69,7 +43,7 @@ var Actions = map[models.ModelType]decodeRawAction{
 			return nil, err
 		}
 
-		return actions.NewHttpGetAction(model.Url, "", nil), nil
+		return actions.NewHttpGetAction(model), nil
 
 	},
 }

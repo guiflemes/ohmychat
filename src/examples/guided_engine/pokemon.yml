@@ -1,16 +1,19 @@
 engine: guided_response
 intents:
-  - name: Menu Principal
+  - name: Pokemons, que legal :)
     key: parent
     options:
-      - name: Esses são os pokemons chatões
+      - content: Esses são os pokemons chatões 
+        name: Chatões
         key: chatoes
-      - name: Esses são os pokemons fodões
+      - content: Esses são os pokemons fodões
+        name: Fodões
         key: fodoes
   - name: Chatões
     key: chatoes
     options:
-      - name: Habilidades do pikachu
+      - content: Habilidades do pikachu
+        name: Pikachu
         key: pikachu
         action:
           type: http_get
@@ -20,7 +23,8 @@ intents:
               authorization: ""
               content_type: application/json
             response_field: abilities[1].ability.name
-      - name: Habiliades do butterfree
+      - content: Habiliades do butterfree
+        name: Butterfree
         key: butterfree    
         action:
           type: http_get
@@ -33,7 +37,8 @@ intents:
   - name: Fodões
     key: fodoes
     options:
-      - name: Habilidades do charizard
+      - content: Habilidades do charizard
+        name: Charizard
         key: charizard
         action:
           type: http_get
@@ -43,7 +48,8 @@ intents:
               authorization: ""
               content_type: application/json
             response_field: abilities[1].ability.name
-      - name: Habiliades do mewtwo
+      - content: Habiliades do mewtwo
+        name: Mewtwo
         key: mewtwo
         action:
           type: http_get

@@ -65,15 +65,15 @@ func (r *restyReqAdapter) Get(url string) (HttpResp, error) {
 	return &restyRespAdapter{resp: resp}, nil
 }
 
-func NewHttpGetAction(url, auth string, tag *TagAcess) *HttpGetAction {
-
+func NewHttpGetAction(model *models.HttpGetModel) *HttpGetAction {
+	// TODO : resolve auth
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
 	return &HttpGetAction{
-		url:       url,
-		auth:      auth,
+		url:       model.Url,
+		auth:      "",
 		client:    client_adapter,
-		tag:       tag,
+		tag:       &TagAcess{model.ResponseField},
 		mapAccess: mapaccess.Get,
 	}
 }
