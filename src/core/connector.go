@@ -35,7 +35,7 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	conn, err := m.getConnector(bot)
 	if err != nil {
 		logger.Logger.Panic("chat connector error",
-			zap.String("context", "connectot"),
+			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
 		panic("chat connector is not supported")

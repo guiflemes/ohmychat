@@ -193,6 +193,10 @@ const (
 	HumanHandOff
 )
 
+type GuidedResponseRepo interface {
+	GetMessageTree(workflowID string) (*MessageTree, error)
+}
+
 type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
@@ -200,12 +204,17 @@ type guidedResponseEngine struct {
 	actionQueue  ActionQueue
 	setup        bool
 	chatRouting  ChatRoutingRule
+	repo         GuidedResponseRepo
 }
 
-func NewGuidedResponseEngine(actionQueue ActionQueue) *guidedResponseEngine {
+func NewGuidedResponseEngine(
+	actionQueue ActionQueue,
+	repo GuidedResponseRepo,
+) *guidedResponseEngine {
 	return &guidedResponseEngine{
 		actionQueue: actionQueue,
 		chatRouting: Fallback,
+		repo:        repo,
 	}
 }
 
@@ -213,16 +222,16 @@ func (e *guidedResponseEngine) IsReady() bool {
 	return e.setup
 }
 
-func (e *guidedResponseEngine) Config(workflow Workflow) {
-	// TODO -> resolve mock depedency
-	// workflow must be a repository to guided respose workflows then parse it in a tree
-	// workflowGetter -> table to register type of chat to engine
-	// ChatX: workflowEngineRepo
-	// Repo: parse data
-	flow := PokemonFlow()
-	e.tree = flow
-	e.node = flow.Root()
+func (e *guidedResponseEngine) Config(workflowID string) error {
+	tree, err := e.repo.GetMessageTree(workflowID)
+	if err != nil {
+		return err
+	}
+
+	e.tree = tree
+	e.node = tree.Root()
 	e.setup = true
+	return nil
 }
 
 func (e *guidedResponseEngine) route() {

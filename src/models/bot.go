@@ -18,3 +18,9 @@ func NewBot(conn MessageConnector) *Bot {
 type TelegramConfig struct {
 	Token string
 }
+
+type ChatBot struct {
+	BotName    string
+	Engine     string
+	WorkflowID string
+}

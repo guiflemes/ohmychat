@@ -20,7 +20,7 @@ func ReadYml() {
 		log.Fatalf("error reading YAML file: %v", err)
 	}
 
-	var model models.WorkFlowGuided
+	var model models.WorkflowGuidedModel
 
 	if err := yaml.Unmarshal(data, &model); err != nil {
 		log.Fatalf("error Unmarshal YAML file: %v", err)

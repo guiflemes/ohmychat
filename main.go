@@ -7,9 +7,9 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"oh-my-chat/src/adapters"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
-	"oh-my-chat/src/schemas"
 )
 
 func main() {
@@ -19,22 +19,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	schemas.ReadYml()
-
-}
-
-type mockWorkflowGetter struct {
-	//guidedRepo GuidedRepo
-}
-
-func (m *mockWorkflowGetter) GetFlow(channelName string) core.Workflow {
-	return &mockWorkflow{}
-}
-
-type mockWorkflow struct{}
-
-func (m *mockWorkflow) Engine() string {
-	return "guided"
+	Run()
 }
 
 func Run() {
@@ -48,9 +33,9 @@ func Run() {
 	bot := models.NewBot(models.Telegram)
 	actionQueue := core.NewGoActionQueue()
 	actionQueue.Consume(ctx)
-	guidedEngine := core.NewGuidedResponseEngine(actionQueue)
+	guidedEngine := core.NewGuidedResponseEngine(actionQueue, &adapters.LocalFileRepository{})
 
-	processor := core.NewProcessor(&mockWorkflowGetter{}, core.Engines{guidedEngine})
+	processor := core.NewProcessor(adapters.NewMemoryChatbotRepo(), core.Engines{guidedEngine})
 	connector := core.NewMuitiChannelConnector(bot)
 	var wg sync.WaitGroup
 

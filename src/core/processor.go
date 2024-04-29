@@ -13,8 +13,8 @@ type Workflow interface {
 	Engine() string
 }
 
-type WorkflowGetter interface {
-	GetFlow(channelName string) Workflow
+type ChatBotGetter interface {
+	GetChatBot(channelName string) *models.ChatBot
 }
 
 type ActionQueue interface {
@@ -26,7 +26,7 @@ type Engine interface {
 	Name() string
 	HandleMessage(models.Message, chan<- models.Message)
 	GetActionQueue() ActionQueue
-	Config(workflow Workflow)
+	Config(channelName string) error
 	IsReady() bool
 }
 
@@ -42,15 +42,15 @@ func (e Engines) GetTarget(target string) Engine {
 }
 
 type processor struct {
-	workflowGetter WorkflowGetter
-	workflow       Workflow
-	engines        Engines
+	chatBotGetter ChatBotGetter
+	chatBot       *models.ChatBot
+	engines       Engines
 }
 
-func NewProcessor(workflowGetter WorkflowGetter, engines Engines) *processor {
+func NewProcessor(chatBotGetter ChatBotGetter, engines Engines) *processor {
 	return &processor{
-		workflowGetter: workflowGetter,
-		engines:        engines,
+		chatBotGetter: chatBotGetter,
+		engines:       engines,
 	}
 }
 
@@ -58,8 +58,8 @@ func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- mod
 	for {
 		message := <-inputMsg
 
-		if m.workflow == nil {
-			m.workflow = m.workflowGetter.GetFlow(message.ChannelName)
+		if m.chatBot == nil {
+			m.chatBot = m.chatBotGetter.GetChatBot(message.ChannelName)
 		}
 
 		m.handleWorkflow(message, outputMsg)
@@ -67,10 +67,15 @@ func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- mod
 }
 
 func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Message) {
-	if m.workflow == nil {
+	if m.chatBot == nil {
 		logger.Logger.Error(
-			"Work flow not found",
-			zap.String("platfotm", string(msg.Connector)), zap.String("context", "processor"),
+			"Chatbot not found",
+			zap.String(
+				"platfotm",
+				string(msg.Connector),
+			),
+			zap.String("context", "processor"),
+			zap.String("chatbot", msg.ChannelName),
 		)
 
 		msg.Error = "some error has ocurred"
@@ -78,12 +83,12 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 		return
 	}
 
-	engine := m.engines.GetTarget(m.workflow.Engine())
+	engine := m.engines.GetTarget(m.chatBot.Engine)
 
 	if engine == nil {
 		logger.Logger.Error(
 			"Engine not found",
-			zap.String("engine", m.workflow.Engine()), zap.String("context", "processor"),
+			zap.String("engine", m.chatBot.Engine), zap.String("context", "processor"),
 		)
 		msg.Error = "some error has ocurred"
 		output <- msg
@@ -95,7 +100,7 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 			"The engine is not ready. Starting to prepare it",
 			zap.String("engine", engine.Name()),
 		)
-		engine.Config(m.workflow)
+		engine.Config(m.chatBot.WorkflowID)
 	}
 
 	engine.HandleMessage(msg, output)

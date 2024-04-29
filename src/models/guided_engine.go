@@ -13,7 +13,7 @@ type IntentModel struct {
 	Options []OptionModel `yaml:"options"`
 }
 
-type WorkFlowGuided struct {
+type WorkflowGuidedModel struct {
 	Engine  string        `yaml:"engine"`
 	Intents []IntentModel `yaml:"intents"`
 }
