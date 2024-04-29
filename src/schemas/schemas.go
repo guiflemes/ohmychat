@@ -13,11 +13,6 @@ import (
 	"oh-my-chat/src/models"
 )
 
-type ModelTest struct {
-	Engine  string               `yaml:"engine"`
-	Intents []models.IntentModel `yaml:"intents"`
-}
-
 func ReadYml() {
 
 	data, err := os.ReadFile("src/examples/guided_engine/pokemon.yml")
@@ -25,7 +20,7 @@ func ReadYml() {
 		log.Fatalf("error reading YAML file: %v", err)
 	}
 
-	var model ModelTest
+	var model models.WorkFlowGuided
 
 	if err := yaml.Unmarshal(data, &model); err != nil {
 		log.Fatalf("error Unmarshal YAML file: %v", err)
@@ -64,20 +59,15 @@ func parseGuidedSchemas(intents []models.IntentModel) (*core.MessageTree, error)
 	return tree, nil
 }
 
-var Actions = map[models.ModelType]func(rawModel map[string]any) (core.Action, error){
+type decodeRawAction func(rawModel map[string]any) (core.Action, error)
+
+var Actions = map[models.ModelType]decodeRawAction{
 	models.TypeHttpGetModel: func(rawModel map[string]any) (core.Action, error) {
 
-		b, err := json.Marshal(rawModel)
-		if err != nil {
+		model := &models.HttpGetModel{}
+		if err := parseRawModel(model, rawModel); err != nil {
 			return nil, err
 		}
-
-		var model models.HttpGetModel
-		err = json.Unmarshal(b, &model)
-		if err != nil {
-			return nil, err
-		}
-		//TODO pass models arg
 
 		return actions.NewHttpGetAction(model.Url, "", nil), nil
 
@@ -108,4 +98,18 @@ func decodeAction(model *models.ActionModel) (core.Action, error) {
 		return nil, fmt.Errorf("unsupported model format %T", model.Object)
 	}
 
+}
+
+func parseRawModel(model models.Model, rawModel map[string]any) error {
+	b, err := json.Marshal(rawModel)
+
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(b, &model); err != nil {
+		return err
+	}
+
+	return nil
 }

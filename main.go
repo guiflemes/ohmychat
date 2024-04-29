@@ -23,7 +23,9 @@ func main() {
 
 }
 
-type mockWorkflowGetter struct{}
+type mockWorkflowGetter struct {
+	//guidedRepo GuidedRepo
+}
 
 func (m *mockWorkflowGetter) GetFlow(channelName string) core.Workflow {
 	return &mockWorkflow{}

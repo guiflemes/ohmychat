@@ -215,6 +215,10 @@ func (e *guidedResponseEngine) IsReady() bool {
 
 func (e *guidedResponseEngine) Config(workflow Workflow) {
 	// TODO -> resolve mock depedency
+	// workflow must be a repository to guided respose workflows then parse it in a tree
+	// workflowGetter -> table to register type of chat to engine
+	// ChatX: workflowEngineRepo
+	// Repo: parse data
 	flow := PokemonFlow()
 	e.tree = flow
 	e.node = flow.Root()

@@ -12,3 +12,8 @@ type IntentModel struct {
 	Key     string        `yaml:"key"`
 	Options []OptionModel `yaml:"options"`
 }
+
+type WorkFlowGuided struct {
+	Engine  string        `yaml:"engine"`
+	Intents []IntentModel `yaml:"intents"`
+}

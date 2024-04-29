@@ -10,3 +10,7 @@ type HttpGetModel struct {
 	Headers       Headers `yaml:"headers"        json:"headers"`
 	ResponseField string  `yaml:"response_field" json:"response_field"`
 }
+
+func (h *HttpGetModel) GetType() string {
+	return "http_get"
+}
