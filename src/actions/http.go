@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/iv-p/mapaccess"
@@ -15,7 +16,10 @@ import (
 )
 
 type (
-	HttpClient interface{ R() HttpReq }
+	HttpClient interface {
+		R() HttpReq
+		SetTimeOut(timeout time.Duration)
+	}
 
 	HttpReq interface {
 		SetHeader(header, value string) HttpReq
@@ -34,6 +38,10 @@ type restyHttpClientAdapter struct {
 
 func (r *restyHttpClientAdapter) R() HttpReq {
 	return &restyReqAdapter{req: r.client.R()}
+}
+
+func (r *restyHttpClientAdapter) SetTimeOut(timeout time.Duration) {
+	r.client.SetTimeout(timeout)
 }
 
 type restyRespAdapter struct {
@@ -66,15 +74,16 @@ func (r *restyReqAdapter) Get(url string) (HttpResp, error) {
 }
 
 func NewHttpGetAction(model *models.HttpGetModel) *HttpGetAction {
-	// TODO : resolve auth
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 
 	return &HttpGetAction{
-		url:       model.Url,
-		auth:      "",
-		client:    client_adapter,
-		tag:       &TagAcess{model.ResponseField},
-		mapAccess: mapaccess.Get,
+		url:         model.Url,
+		auth:        model.Headers.Authorization,
+		client:      client_adapter,
+		tag:         &TagAcess{model.ResponseField},
+		mapAccess:   mapaccess.Get,
+		contentType: model.Headers.ContentType,
+		timeOut:     model.TimeOut,
 	}
 }
 
@@ -89,25 +98,39 @@ func (e *SomeError) Error() string {
 }
 
 type HttpGetAction struct {
-	url       string
-	auth      string
-	client    HttpClient
-	tag       *TagAcess
-	mapAccess MapAcesss
+	url         string
+	auth        string
+	client      HttpClient
+	tag         *TagAcess
+	mapAccess   MapAcesss
+	contentType string
+	timeOut     int
 }
 
 func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) error {
-	//create someting to replace values in url for exempe www.test.com/{invoice_id}  -> message.Input = "invoice_id"
+	//create something to replace values in url for exempe www.test.com/{invoice_id}  -> message.Input = "invoice_id"
 	log := logger.Logger.With(
 		zap.String("action", "get_http"),
 		zap.String("url", a.url),
 		zap.String("provider", string(message.Connector)),
 	)
 
+	if a.timeOut == 0 {
+		a.timeOut = 10
+	}
+
+	a.client.SetTimeOut(time.Duration(a.timeOut) * time.Second)
+
 	req := a.client.R()
 
 	if a.auth != "" {
 		req.SetHeader("Authorization", a.auth)
+	}
+
+	if a.contentType != "application/json" {
+		log.Sugar().
+			Errorf("only 'application/json' is supported currently, given %s", a.contentType)
+		return &SomeError{}
 	}
 
 	resp, err := req.SetHeader("Content-Type", "application/json").

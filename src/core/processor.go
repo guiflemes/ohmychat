@@ -14,7 +14,7 @@ type Workflow interface {
 }
 
 type ChatBotGetter interface {
-	GetChatBot(channelName string) *models.ChatBot
+	GetChatBot(botName string) *models.ChatBot
 }
 
 type ActionQueue interface {
@@ -59,7 +59,7 @@ func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- mod
 		message := <-inputMsg
 
 		if m.chatBot == nil {
-			m.chatBot = m.chatBotGetter.GetChatBot(message.ChannelName)
+			m.chatBot = m.chatBotGetter.GetChatBot(message.BotName)
 		}
 
 		m.handleWorkflow(message, outputMsg)
@@ -75,7 +75,7 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 				string(msg.Connector),
 			),
 			zap.String("context", "processor"),
-			zap.String("chatbot", msg.ChannelName),
+			zap.String("chatbot", msg.BotName),
 		)
 
 		msg.Error = "some error has ocurred"
@@ -102,6 +102,8 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 		)
 		engine.Config(m.chatBot.WorkflowID)
 	}
+
+	logger.Logger.Info("handling message", zap.String("message_id", msg.BotID))
 
 	engine.HandleMessage(msg, output)
 }

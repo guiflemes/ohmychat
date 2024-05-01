@@ -9,6 +9,7 @@ type HttpGetModel struct {
 	Url           string  `yaml:"url"            json:"url"`
 	Headers       Headers `yaml:"headers"        json:"headers"`
 	ResponseField string  `yaml:"response_field" json:"response_field"`
+	TimeOut       int     `yaml:"timeout"        json:"timeout"`
 }
 
 func (h *HttpGetModel) GetType() string {

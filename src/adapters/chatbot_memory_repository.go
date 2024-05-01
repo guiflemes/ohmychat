@@ -11,10 +11,10 @@ type MemoryChatbotRepo struct {
 	lock *sync.Mutex
 }
 
-func (m *MemoryChatbotRepo) GetChatBot(channelName string) *models.ChatBot {
+func (m *MemoryChatbotRepo) GetChatBot(botName string) *models.ChatBot {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	chatbot, ok := m.bots["my_first_bot"]
+	chatbot, ok := m.bots[botName]
 
 	if !ok {
 		return nil
@@ -25,8 +25,8 @@ func (m *MemoryChatbotRepo) GetChatBot(channelName string) *models.ChatBot {
 func NewMemoryChatbotRepo() *MemoryChatbotRepo {
 	return &MemoryChatbotRepo{
 		bots: map[string]*models.ChatBot{
-			"my_first_bot": {
-				BotName:    "my_first_bot",
+			"notion_notifierX_bot": {
+				BotName:    "notion_notifierX_bot",
 				Engine:     "guided",
 				WorkflowID: "pokemon",
 			},

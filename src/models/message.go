@@ -59,6 +59,8 @@ type Message struct {
 	Service      MessageService
 	Connector    MessageConnector
 	ConnectorID  string
+	BotName      string
+	BotID        string
 	ChannelID    string
 	ChannelName  string
 	Input        string

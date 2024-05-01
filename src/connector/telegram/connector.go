@@ -75,6 +75,8 @@ func (t *telegram) Acquire(input chan<- models.Message) {
 		message.Input = m.Text
 		message.Service = models.MsgServiceChat
 		message.ChannelID = strconv.FormatInt(m.Chat.ID, 10)
+		message.BotID = strconv.FormatInt(user.ID, 10)
+		message.BotName = user.UserName
 
 		input <- message
 	}
