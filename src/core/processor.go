@@ -1,8 +1,6 @@
 package core
 
 import (
-	"context"
-
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/logger"
@@ -18,7 +16,6 @@ type ChatBotGetter interface {
 }
 
 type ActionQueue interface {
-	Consume(context.Context)
 	Put(actionPair ActionReplyPair)
 }
 
@@ -77,9 +74,10 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 			zap.String("context", "processor"),
 			zap.String("chatbot", msg.BotName),
 		)
-
-		msg.Error = "some error has ocurred"
-		output <- msg
+		response := &msg
+		response.Output = "some error has ocurred"
+		response.Error = "chat not found"
+		output <- *response
 		return
 	}
 
@@ -90,8 +88,10 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 			"Engine not found",
 			zap.String("engine", m.chatBot.Engine), zap.String("context", "processor"),
 		)
-		msg.Error = "some error has ocurred"
-		output <- msg
+		response := &msg
+		response.Output = "some error has ocurred"
+		response.Error = "engine not found"
+		output <- *response
 		return
 	}
 
