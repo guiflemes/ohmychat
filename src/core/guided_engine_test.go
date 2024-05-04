@@ -53,7 +53,7 @@ var nodes = []*MessageNode{
 	NewMessageNode(
 		"child2GreatGrandson",
 		"child2grandChild2",
-		"im grreate grandson from child2grandChild2",
+		"im great grandson from child2grandChild2",
 		"marvin",
 		nil,
 	),
@@ -119,6 +119,100 @@ func TestNodeInsert(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			children := collectChildren(c.node)
 			assertNodes(assert, c.expectedIds, children)
+		})
+	}
+
+}
+
+func TestNodeSearchChild(t *testing.T) {
+	assert := assert.New(t)
+	root := nodes[0]
+	others := nodes[1:]
+
+	type testCase struct {
+		desc          string
+		node          *MessageNode
+		expectedChild *MessageNode
+		searchID      string
+	}
+
+	for _, c := range []testCase{
+		{
+			desc:          "search for root's child",
+			node:          root,
+			expectedChild: others[0],
+			searchID:      others[0].message.id,
+		},
+		{
+			desc:          "search for child1's child",
+			node:          others[0],
+			expectedChild: others[3],
+			searchID:      others[3].message.id,
+		},
+		{
+			desc:          "search for child2grandChild2's child",
+			node:          others[7],
+			expectedChild: others[8],
+			searchID:      others[8].message.id,
+		},
+		{
+			desc:          "search for child3's child",
+			node:          others[1],
+			expectedChild: nil,
+			searchID:      "someID",
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			n := c.node.searchChild(c.searchID)
+			assert.Equal(n, c.expectedChild)
+		})
+
+	}
+
+}
+
+func TestNodeTransverseInChildren(t *testing.T) {
+	assert := assert.New(t)
+	root := nodes[0]
+	others := nodes[1:]
+
+	type testCase struct {
+		desc           string
+		node           *MessageNode
+		expectedResult int
+	}
+
+	for _, c := range []testCase{
+		{
+			desc:           "root node contains 3 children",
+			node:           root,
+			expectedResult: 3,
+		},
+		{
+			desc:           "child1 node contains 2 children",
+			node:           others[0],
+			expectedResult: 2,
+		},
+		{
+			desc:           "child2grandChild2 node contains 1 child",
+			node:           others[7],
+			expectedResult: 1,
+		},
+		{
+			desc:           "child2grandChild2 node doest have any node",
+			node:           others[8],
+			expectedResult: 0,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			var countChildren int
+
+			c.node.TransverseInChildren(func(child *MessageNode) {
+				countChildren++
+			})
+
+			assert.Equal(countChildren, c.expectedResult)
+
 		})
 	}
 
