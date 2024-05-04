@@ -1,62 +1,66 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-var nodes = []*MessageNode{
-	NewMessageNode("parent", "", "im father", "hello world", nil),
-	NewMessageNode("child1", "parent", "im child1", "hello im child1", nil),
-	NewMessageNode("child2", "parent", "im child2", "hello im child2", nil),
-	NewMessageNode("child3", "parent", "im child3", "hello im child3", nil),
+var stubNodes = func() []*MessageNode {
+	return []*MessageNode{
+		NewMessageNode("parent", "", "im father", "hello world", nil),
+		NewMessageNode("child1", "parent", "im child1", "hello im child1", nil),
+		NewMessageNode("child2", "parent", "im child2", "hello im child2", nil),
+		NewMessageNode("child3", "parent", "im child3", "hello im child3", nil),
 
-	NewMessageNode(
-		"child1child1",
-		"child1",
-		"im child1 from child1",
-		"hello im child1",
-		nil,
-	),
-	NewMessageNode(
-		"child1child2",
-		"child1",
-		"im child2 from child2",
-		"hello im child2",
-		nil,
-	),
+		NewMessageNode(
+			"child1child1",
+			"child1",
+			"im child1 from child1",
+			"hello im child1",
+			nil,
+		),
+		NewMessageNode(
+			"child1child2",
+			"child1",
+			"im child2 from child2",
+			"hello im child2",
+			nil,
+		),
 
-	NewMessageNode(
-		"child2child",
-		"child2",
-		"im child1 from child1",
-		"odies",
-		nil,
-	),
+		NewMessageNode(
+			"child2child",
+			"child2",
+			"im child1 from child1",
+			"odies",
+			nil,
+		),
 
-	NewMessageNode(
-		"child2grandChild",
-		"child2child",
-		"im grandChild from child2",
-		"marvin",
-		nil,
-	),
+		NewMessageNode(
+			"child2grandChild",
+			"child2child",
+			"im grandChild from child2",
+			"marvin",
+			nil,
+		),
 
-	NewMessageNode(
-		"child2grandChild2",
-		"child2child",
-		"im grandChild from child2",
-		"coco",
-		nil,
-	),
-	NewMessageNode(
-		"child2GreatGrandson",
-		"child2grandChild2",
-		"im great grandson from child2grandChild2",
-		"marvin",
-		nil,
-	),
+		NewMessageNode(
+			"child2grandChild2",
+			"child2child",
+			"im grandChild from child2",
+			"coco",
+			nil,
+		),
+		NewMessageNode(
+			"child2GreatGrandson",
+			"child2grandChild2",
+			"im great grandson from child2grandChild2",
+			"marvin",
+			nil,
+		),
+	}
 }
 
 func assertNodes(assert *assert.Assertions, expectedIds []string, children []*MessageNode) {
@@ -76,6 +80,7 @@ func collectChildren(node *MessageNode) []*MessageNode {
 
 func TestNodeInsert(t *testing.T) {
 	assert := assert.New(t)
+	nodes := stubNodes()
 	root := nodes[0]
 	others := nodes[1:]
 
@@ -126,8 +131,13 @@ func TestNodeInsert(t *testing.T) {
 
 func TestNodeSearchChild(t *testing.T) {
 	assert := assert.New(t)
+	nodes := stubNodes()
 	root := nodes[0]
 	others := nodes[1:]
+
+	for _, node := range others {
+		root.insert(node)
+	}
 
 	type testCase struct {
 		desc          string
@@ -173,8 +183,13 @@ func TestNodeSearchChild(t *testing.T) {
 
 func TestNodeTransverseInChildren(t *testing.T) {
 	assert := assert.New(t)
+	nodes := stubNodes()
 	root := nodes[0]
 	others := nodes[1:]
+
+	for _, node := range others {
+		root.insert(node)
+	}
 
 	type testCase struct {
 		desc           string
@@ -209,6 +224,7 @@ func TestNodeTransverseInChildren(t *testing.T) {
 
 			c.node.TransverseInChildren(func(child *MessageNode) {
 				countChildren++
+
 			})
 
 			assert.Equal(countChildren, c.expectedResult)
@@ -216,4 +232,54 @@ func TestNodeTransverseInChildren(t *testing.T) {
 		})
 	}
 
+}
+
+type MessageTreeSuite struct {
+	suite.Suite
+	n []*MessageNode
+}
+
+func (m *MessageTreeSuite) BeforeTest(suiteName, testName string) {
+	m.n = stubNodes()
+}
+
+func (m *MessageTreeSuite) TestSetRoot() {
+	tree := &MessageTree{}
+
+	for _, node := range m.n {
+		m.Run(fmt.Sprintf("set root to node %s", node.message.id), func() {
+			tree.SetRoot(node)
+			m.Equal(tree.Root(), node)
+		})
+	}
+}
+
+func (m *MessageTreeSuite) TestInsert() {
+	tree := &MessageTree{}
+
+	for _, node := range m.n {
+		m.Run(fmt.Sprintf("insert node %s", node.message.id), func() {
+			root := tree.Insert(node)
+			m.Equal(tree.Root().Message().ID(), root.Root().Message().ID())
+		})
+	}
+}
+
+func (m *MessageTreeSuite) TestSearch() {
+	tree := &MessageTree{}
+
+	for _, node := range m.n {
+		tree.Insert(node)
+	}
+
+	n := tree.Search("child1")
+	m.Equal(n.Message().ID(), "child1")
+
+	n = tree.Search("child2")
+	m.Equal(n.Message().ID(), "child2")
+
+}
+
+func TestMessageTreeSuite(t *testing.T) {
+	suite.Run(t, new(MessageTreeSuite))
 }
