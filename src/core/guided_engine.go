@@ -57,6 +57,7 @@ func (n *MessageNode) Message() Message {
 }
 
 func (n *MessageNode) insert(node *MessageNode) {
+
 	if n.message.id == node.message.parent {
 		if n.firstChild == nil {
 			n.firstChild = node
@@ -70,31 +71,23 @@ func (n *MessageNode) insert(node *MessageNode) {
 		return
 	}
 
-	if n.firstChild.message.id == node.message.parent {
-		n.firstChild.insert(node)
-		return
-	}
-
-	found := false
-	sibling := n.firstChild
-	for sibling.nextSibling != nil {
-		sibling = sibling.nextSibling
-		if sibling.message.id == node.message.parent {
-			found = !found
-			break
+	if n.firstChild != nil {
+		if n.firstChild.message.id == node.message.parent {
+			n.firstChild.insert(node)
+			return
+		}
+		sibling := n.firstChild
+		for sibling != nil {
+			if sibling.message.id == node.message.parent {
+				sibling.insert(node)
+				return
+			}
+			if sibling.firstChild != nil {
+				sibling.firstChild.insert(node)
+			}
+			sibling = sibling.nextSibling
 		}
 	}
-
-	if !found {
-		fmt.Printf(
-			"node %s without parent, given parent %s not found/n",
-			node.message.id,
-			node.message.parent,
-		)
-		return
-	}
-
-	sibling.insert(node)
 
 }
 
