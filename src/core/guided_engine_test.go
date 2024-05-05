@@ -412,6 +412,10 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 	} {
 		g.Run(c.desc, func() {
 
+			defer func() {
+				g.engine.setup = true
+			}()
+
 			if c.SetUnready {
 				g.engine.setup = false
 			}
@@ -432,7 +436,6 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 
 			}
 
-			g.engine.setup = true
 		})
 	}
 
