@@ -1,17 +1,29 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"oh-my-chat/src/models"
 )
+
+type FakeAction struct{}
+
+func (a *FakeAction) Handle(ctx context.Context, message *models.Message) error {
+	return nil
+}
+
+var fakeAction = &FakeAction{}
 
 var stubNodes = func() []*MessageNode {
 	return []*MessageNode{
 		NewMessageNode("parent", "", "im father", "hello world", nil),
-		NewMessageNode("child1", "parent", "im child1", "hello im child1", nil),
+		NewMessageNode("child1", "parent", "im child1", "hello im child1", fakeAction),
 		NewMessageNode("child2", "parent", "im child2", "hello im child2", nil),
 		NewMessageNode("child3", "parent", "im child3", "hello im child3", nil),
 
@@ -282,4 +294,150 @@ func (m *MessageTreeSuite) TestSearch() {
 
 func TestMessageTreeSuite(t *testing.T) {
 	suite.Run(t, new(MessageTreeSuite))
+}
+
+type MockQueue struct {
+	mock.Mock
+}
+
+func (q *MockQueue) Put(actionPair ActionReplyPair) {
+	q.Called(actionPair)
+}
+
+type MockRepo struct {
+	tree *MessageTree
+}
+
+func (r *MockRepo) GetMessageTree(workflowID string) (*MessageTree, error) {
+	return r.tree, nil
+}
+
+type GuidedEngineSuite struct {
+	suite.Suite
+	engine    *guidedResponseEngine
+	mockQueue *MockQueue
+}
+
+func (g *GuidedEngineSuite) BeforeTest(suiteName, testName string) {
+	tree := &MessageTree{}
+	nodes := stubNodes()
+
+	for _, node := range nodes {
+		tree.Insert(node)
+	}
+
+	mockRepo := &MockRepo{tree: tree}
+	mockQueue := &MockQueue{}
+	mockQueue.On("Put", mock.AnythingOfType("ActionReplyPair")).Return()
+
+	g.mockQueue = mockQueue
+	engine := NewGuidedResponseEngine(mockQueue, mockRepo)
+	engine.Config("config")
+	g.engine = engine
+}
+
+func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
+	output := make(chan models.Message, 1)
+
+	type testCase struct {
+		desc            string
+		input           models.Message
+		expectedContent string
+		expectedOptions []models.Option
+		SetUnready      bool
+		hasAction       bool
+	}
+
+	for _, c := range []testCase{
+		{
+			desc:            "startup chat conversation",
+			input:           models.Message{Input: "hello sir"},
+			expectedContent: "hello world",
+			expectedOptions: []models.Option{
+				{
+					ID:   "child1",
+					Name: "im child1",
+				},
+				{
+					ID:   "child2",
+					Name: "im child2",
+				},
+				{
+					ID:   "child3",
+					Name: "im child3",
+				},
+			},
+		},
+		{
+			desc:            "press child1 option",
+			input:           models.Message{Input: "child1"},
+			expectedContent: "hello im child1",
+			expectedOptions: []models.Option{
+				{
+					ID:   "child1child1",
+					Name: "im child1 from child1",
+				},
+				{
+					ID:   "child1child2",
+					Name: "im child2 from child2",
+				},
+			},
+			hasAction: true,
+		},
+		{
+			desc:            "press invalid option, go back to the root",
+			input:           models.Message{Input: "invalid"},
+			expectedContent: "hello world",
+			expectedOptions: []models.Option{
+				{
+					ID:   "child1",
+					Name: "im child1",
+				},
+				{
+					ID:   "child2",
+					Name: "im child2",
+				},
+				{
+					ID:   "child3",
+					Name: "im child3",
+				},
+			},
+		},
+		{
+			desc:            "engine is not ready",
+			input:           models.Message{Input: "hello sir"},
+			expectedContent: "some error ocurred, please contant admin",
+			SetUnready:      true,
+		},
+	} {
+		g.Run(c.desc, func() {
+
+			if c.SetUnready {
+				g.engine.setup = false
+			}
+
+			go g.engine.HandleMessage(c.input, output)
+
+			result := <-output
+
+			g.Equal(c.expectedContent, result.Output)
+			g.Equal(c.expectedOptions, result.Options)
+
+			if c.hasAction {
+				g.mockQueue.AssertCalled(
+					g.T(),
+					"Put",
+					mock.AnythingOfType("ActionReplyPair"),
+				)
+
+			}
+
+			g.engine.setup = true
+		})
+	}
+
+}
+
+func TestSuitGuidedEngine(t *testing.T) {
+	suite.Run(t, new(GuidedEngineSuite))
 }
