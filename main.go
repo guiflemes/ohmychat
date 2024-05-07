@@ -31,7 +31,7 @@ func Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot := models.NewBot(models.Telegram)
-	actionQueue := core.NewGoActionQueue()
+	actionQueue := core.NewGoActionQueue(5)
 	actionQueue.Consume(ctx)
 	guidedEngine := core.NewGuidedResponseEngine(actionQueue, adapters.NewLoadFileRepository())
 
@@ -41,9 +41,9 @@ func Run() {
 
 	wg.Add(3)
 
-	go processor.Process(inputMsg, outputMsg)
+	go processor.Process(ctx, inputMsg, outputMsg)
 	go connector.Request(inputMsg)
-	go connector.Respose(outputMsg)
+	go connector.Response(ctx, outputMsg)
 
 	wg.Wait()
 }

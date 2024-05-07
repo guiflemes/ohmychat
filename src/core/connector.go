@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/connector"
@@ -16,47 +18,66 @@ func (*NotSupportConnectorError) Error() string {
 }
 
 type NewConnector func(bot *models.Bot) (connector.Connector, error)
+type GetConnectors func() map[models.MessageConnector]NewConnector
 
-type multiChannelConnector struct {
-	connector connector.Connector
+func Connectors() map[models.MessageConnector]NewConnector {
+	return map[models.MessageConnector]NewConnector{
+		models.Telegram: telegram.NewTelegramConnector,
+	}
 }
 
-func (m *multiChannelConnector) getConnector(bot *models.Bot) (connector.Connector, error) {
-	newConnector, ok := m.Connectors()[bot.ChatConnector]
+type multiChannelConnector struct {
+	connector  connector.Connector
+	connectors GetConnectors
+}
+
+func (m *multiChannelConnector) getConnector(conn models.MessageConnector) (NewConnector, error) {
+	newConnector, ok := m.connectors()[conn]
 	if !ok {
 		return nil, &NotSupportConnectorError{}
 	}
 
-	return newConnector(bot)
+	return newConnector, nil
 }
 
 func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	m := &multiChannelConnector{}
-	conn, err := m.getConnector(bot)
+	m.connectors = Connectors
+	connfn, err := m.getConnector(bot.ChatConnector)
+
 	if err != nil {
 		logger.Logger.Panic("chat connector error",
 			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
-		panic("chat connector is not supported")
+	}
+
+	conn, err := connfn(bot)
+
+	if err != nil {
+		logger.Logger.Panic("chat connector error",
+			zap.String("context", "connector"),
+			zap.Error(err),
+			zap.String("connector_name", string(bot.ChatConnector)))
 	}
 	m.connector = conn
 	return m
-}
-
-func (c *multiChannelConnector) Connectors() map[models.MessageConnector]NewConnector {
-	return map[models.MessageConnector]NewConnector{
-		models.Telegram: telegram.NewTelegramConnector,
-	}
 }
 
 func (c *multiChannelConnector) Request(input chan<- models.Message) {
 	c.connector.Acquire(input)
 }
 
-func (c *multiChannelConnector) Respose(output <-chan models.Message) {
+func (c *multiChannelConnector) Response(ctx context.Context, output <-chan models.Message) {
 	for {
-		msg := <-output
-		c.connector.Dispatch(msg)
+		select {
+		case msg, ok := <-output:
+			if !ok {
+				return
+			}
+			c.connector.Dispatch(msg)
+		case <-ctx.Done():
+			return
+		}
 	}
 }

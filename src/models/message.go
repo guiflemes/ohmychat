@@ -24,6 +24,7 @@ type MessageConnector string
 
 const (
 	Telegram MessageConnector = "telegram"
+	Test     MessageConnector = "testConn"
 )
 
 type ResponseType int

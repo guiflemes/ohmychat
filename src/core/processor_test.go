@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,9 @@ func TestProcess(t *testing.T) {
 			engine := &FakeEgine1{engineName: scenario.engineName}
 			processor := NewProcessor(chatBotRepo, []Engine{engine})
 
-			go processor.Process(inputMsg, outputMsg)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go processor.Process(ctx, inputMsg, outputMsg)
 			inputMsg <- models.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
 
 			result := <-outputMsg

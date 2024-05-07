@@ -20,14 +20,15 @@ type goActionQueue struct {
 	actionPair chan ActionReplyPair
 }
 
-func NewGoActionQueue() *goActionQueue {
-	return &goActionQueue{actionPair: make(chan ActionReplyPair)}
+//TODO backpressure strategy
+
+func NewGoActionQueue(workPool int) *goActionQueue {
+	return &goActionQueue{actionPair: make(chan ActionReplyPair, workPool)}
 }
 
 func (q *goActionQueue) Put(actionPair ActionReplyPair) {
 	q.actionPair <- actionPair
 }
-
 func (q *goActionQueue) Consume(ctx context.Context) {
 
 	go func() {

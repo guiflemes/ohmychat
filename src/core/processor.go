@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/logger"
@@ -51,15 +53,27 @@ func NewProcessor(chatBotGetter ChatBotGetter, engines Engines) *processor {
 	}
 }
 
-func (m *processor) Process(inputMsg <-chan models.Message, outputMsg chan<- models.Message) {
+func (m *processor) Process(
+	ctx context.Context,
+	inputMsg <-chan models.Message,
+	outputMsg chan<- models.Message,
+) {
 	for {
-		message := <-inputMsg
+		select {
+		case message, ok := <-inputMsg:
+			if !ok {
+				return
+			}
+			if m.chatBot == nil {
+				m.chatBot = m.chatBotGetter.GetChatBot(message.BotName)
+			}
 
-		if m.chatBot == nil {
-			m.chatBot = m.chatBotGetter.GetChatBot(message.BotName)
+			m.handleWorkflow(message, outputMsg)
+
+		case <-ctx.Done():
+			return
 		}
 
-		m.handleWorkflow(message, outputMsg)
 	}
 }
 
