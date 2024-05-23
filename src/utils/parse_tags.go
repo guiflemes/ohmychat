@@ -26,10 +26,32 @@ func Primitive(value any, t reflect.Type) string {
 	case reflect.Float32, reflect.Float64:
 		return Float64(value.(float64))
 
+	case reflect.Map:
+		return Mapping(value.(map[string]any))
+
 	default:
 		return value.(string)
 	}
 
+}
+
+func Mapping(data map[string]any) string {
+	filteredMap := ""
+	for key, value := range data {
+		switch val := value.(type) {
+		case string:
+			filteredMap += key + ": " + val + "\n"
+		case int, int8, int16, int64:
+			filteredMap += key + ": " + Integer(value.(int)) + "\n"
+		case float32, float64:
+			filteredMap += key + ": " + Float64(value.(float64)) + "\n"
+		case bool:
+			filteredMap += key + ": " + Boolean(value.(bool)) + "\n"
+		default:
+			// Skip slices, maps, and other types
+		}
+	}
+	return filteredMap
 }
 
 func Slice(value []any, t reflect.Type) string {
