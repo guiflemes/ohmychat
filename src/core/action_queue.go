@@ -11,9 +11,9 @@ import (
 )
 
 type ActionReplyPair struct {
-	replyTo chan<- models.Message
-	action  Action
-	input   models.Message
+	ReplyTo chan<- models.Message
+	Action  Action
+	Input   models.Message
 }
 
 type goActionQueue struct {
@@ -37,7 +37,7 @@ func (q *goActionQueue) Consume(ctx context.Context) {
 			select {
 
 			case actionPair := <-q.actionPair:
-				err := actionPair.action.Handle(ctx, &actionPair.input)
+				err := actionPair.Action.Handle(ctx, &actionPair.Input)
 
 				if err != nil {
 					logger.Logger.Error("Error Handling Action",
@@ -46,7 +46,7 @@ func (q *goActionQueue) Consume(ctx context.Context) {
 					)
 				}
 
-				actionPair.replyTo <- actionPair.input
+				actionPair.ReplyTo <- actionPair.Input
 
 			case <-ctx.Done():
 				fmt.Println("Context done")
@@ -62,14 +62,14 @@ func (q *goActionQueue) brodcastAll() {
 	for {
 		select {
 		case actionPair := <-q.actionPair:
-			actionPair.input.Output = "Server is shutting down. Please reconnect later"
+			actionPair.Input.Output = "Server is shutting down. Please reconnect later"
 
 			logger.Logger.Warn("Shutting Down",
 				zap.String("context", "goActionQueue"),
 				zap.String("message", "context done"),
 			)
 
-			actionPair.replyTo <- actionPair.input
+			actionPair.ReplyTo <- actionPair.Input
 		default:
 			return
 		}

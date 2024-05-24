@@ -1,4 +1,4 @@
-package adapters
+package storage
 
 import (
 	"fmt"

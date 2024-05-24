@@ -7,9 +7,9 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"oh-my-chat/src/adapters"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
+	"oh-my-chat/src/storage"
 )
 
 func main() {
@@ -33,9 +33,9 @@ func Run() {
 	bot := models.NewBot(models.Telegram)
 	actionQueue := core.NewGoActionQueue(5)
 	actionQueue.Consume(ctx)
-	guidedEngine := core.NewGuidedResponseEngine(actionQueue, adapters.NewLoadFileRepository())
+	guidedEngine := core.NewGuidedResponseEngine(actionQueue, storage.NewLoadFileRepository())
 
-	processor := core.NewProcessor(adapters.NewMemoryChatbotRepo(), core.Engines{guidedEngine})
+	processor := core.NewProcessor(storage.NewMemoryChatbotRepo(), core.Engines{guidedEngine})
 	connector := core.NewMuitiChannelConnector(bot)
 	var wg sync.WaitGroup
 
