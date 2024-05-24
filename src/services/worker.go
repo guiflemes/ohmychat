@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -12,11 +13,26 @@ import (
 )
 
 type Queue interface {
-	Dequeue() (core.ActionReplyPair, bool)
+	Dequeue() ([]byte, bool)
 }
 
 type Worker struct {
 	queue Queue
+}
+
+func (w *Worker) unmarshallMessage(message []byte) core.ActionReplyPair {
+	var v core.ActionReplyPair
+	if err := json.Unmarshal(message, &v); err != nil {
+		v.Input.Output = "some error has ocurred"
+		v.Input.Error = ""
+		logger.Logger.Error("Error unmarshallMessage",
+			zap.String("context", "worker"),
+			zap.Error(err))
+		return v
+	}
+
+	return v
+
 }
 
 func (w *Worker) Produce(ctx context.Context, action chan<- core.ActionReplyPair) {
@@ -26,8 +42,9 @@ func (w *Worker) Produce(ctx context.Context, action chan<- core.ActionReplyPair
 			fmt.Println("Context done")
 			return
 		default:
-			actionPair, ok := w.queue.Dequeue()
+			message, ok := w.queue.Dequeue()
 			if ok {
+				actionPair := w.unmarshallMessage(message)
 				action <- actionPair
 			}
 
