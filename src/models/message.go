@@ -34,15 +34,15 @@ const (
 )
 
 type Meta struct {
-	data map[string]string
+	Data map[string]string `json:"data"`
 }
 
 func (m *Meta) Add(name, value string) {
-	m.data["name"] = value
+	m.Data["name"] = value
 }
 
 func (m *Meta) Get(name string) string {
-	value, ok := m.data[name]
+	value, ok := m.Data[name]
 	if !ok {
 		return ""
 	}
@@ -50,34 +50,34 @@ func (m *Meta) Get(name string) string {
 }
 
 type Option struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type Message struct {
-	ID           string
-	Type         MessageType
-	Service      MessageService
-	Connector    MessageConnector
-	ConnectorID  string
-	BotName      string
-	BotID        string
-	ChannelID    string
-	ChannelName  string
-	Input        string
-	Output       string
-	Error        string
-	Options      []Option
-	StartTime    int64
-	EndTime      int64
-	ResponseType ResponseType
-	Meta         *Meta
+	ID           string           `json:"id"`
+	Type         MessageType      `json:"type"`
+	Service      MessageService   `json:"service"`
+	Connector    MessageConnector `json:"connector"`
+	ConnectorID  string           `json:"connector_id"`
+	BotName      string           `json:"bot_name"`
+	BotID        string           `json:"bot_id"`
+	ChannelID    string           `json:"channel_id"`
+	ChannelName  string           `json:"channel_name"`
+	Input        string           `json:"input"`
+	Output       string           `json:"output"`
+	Error        string           `json:"error"`
+	Options      []Option         `json:"options"`
+	StartTime    int64            `json:"start_time"`
+	EndTime      int64            `json:"end_time"`
+	ResponseType ResponseType     `json:"response_type"`
+	Meta         *Meta            `json:"meta"`
 }
 
 func NewMessage() Message {
 	return Message{
 		ID:        uuid.NewString(),
 		StartTime: time.Now().Unix(),
-		Meta:      &Meta{data: make(map[string]string)},
+		Meta:      &Meta{Data: make(map[string]string)},
 	}
 }

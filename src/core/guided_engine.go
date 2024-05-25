@@ -281,7 +281,7 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 	e.resolveMessageNode(input.Input)
 
 	if e.node.Message().HasAction() {
-		actionPair := ActionReplyPair{replyTo: output, action: e.node.message.Action, input: input}
+		actionPair := ActionReplyPair{ReplyTo: output, Action: e.node.message.Action, Input: input}
 		queue := e.GetActionQueue()
 		queue.Put(actionPair)
 	}

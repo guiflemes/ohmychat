@@ -2,50 +2,34 @@ package services
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"sync"
 
 	"go.uber.org/zap"
 
+	"oh-my-chat/src/config"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
 )
 
-type Queue interface {
-	Dequeue() ([]byte, bool)
+var workerLog = logger.Logger.With(zap.String("context", "worker"))
+
+type StorageService interface {
+	Pop() (*core.ActionReplyPair, bool)
 }
 
 type Worker struct {
-	queue Queue
-}
-
-func (w *Worker) unmarshallMessage(message []byte) core.ActionReplyPair {
-	var v core.ActionReplyPair
-	if err := json.Unmarshal(message, &v); err != nil {
-		v.Input.Output = "some error has ocurred"
-		v.Input.Error = ""
-		logger.Logger.Error("Error unmarshallMessage",
-			zap.String("context", "worker"),
-			zap.Error(err))
-		return v
-	}
-
-	return v
-
+	storage StorageService
 }
 
 func (w *Worker) Produce(ctx context.Context, action chan<- core.ActionReplyPair) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("Context done")
 			return
 		default:
-			message, ok := w.queue.Dequeue()
+			actionPair, ok := w.storage.Pop()
 			if ok {
-				actionPair := w.unmarshallMessage(message)
-				action <- actionPair
+				action <- *actionPair
 			}
 
 		}
@@ -58,16 +42,12 @@ func (w *Worker) Consume(ctx context.Context, action <-chan core.ActionReplyPair
 		select {
 
 		case <-ctx.Done():
-			fmt.Println("Context done")
 			return
 
 		case actionPair := <-action:
 			err := actionPair.Action.Handle(ctx, &actionPair.Input)
 			if err != nil {
-				logger.Logger.Error("Error Handling Action",
-					zap.String("context", "Worker"),
-					zap.Error(err),
-				)
+				workerLog.Error("Error Handling Action", zap.Error(err))
 			}
 
 			actionPair.ReplyTo <- actionPair.Input
@@ -77,15 +57,25 @@ func (w *Worker) Consume(ctx context.Context, action <-chan core.ActionReplyPair
 	}
 }
 
-func RunWorker(ctx context.Context, queue Queue) {
+func RunWorker(ctx context.Context, config config.Worker, storageService StorageService) {
 	actionCh := make(chan core.ActionReplyPair)
-	var wg sync.WaitGroup
+	var producerWg sync.WaitGroup
+	var consumerWg sync.WaitGroup
 
-	worker := &Worker{queue: queue}
+	worker := &Worker{storage: storageService}
 
-	wg.Add(2)
+	producerWg.Add(1)
 	go worker.Produce(ctx, actionCh)
-	go worker.Consume(ctx, actionCh)
 
-	wg.Wait()
+	for i := 0; i < config.Number; i++ {
+		consumerWg.Add(1)
+		go worker.Consume(ctx, actionCh)
+	}
+
+	producerWg.Wait()
+	workerLog.Debug("Closing procuder")
+	close(actionCh)
+
+	consumerWg.Wait()
+	workerLog.Debug("Closing consumers")
 }
