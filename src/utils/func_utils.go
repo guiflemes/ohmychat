@@ -36,3 +36,10 @@ func GetUserFromContext(ctx context.Context) *User {
 	user := ctx.Value(UserKey).(*User)
 	return user
 }
+
+func RemoveItemByIndex[T any](slice []T, index int) []T {
+	if index >= 0 && index < len(slice) {
+		return append(slice[:index], slice[index+1:]...)
+	}
+	return slice
+}

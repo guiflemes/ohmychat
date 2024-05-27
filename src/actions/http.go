@@ -97,6 +97,8 @@ func (e *SomeError) Error() string {
 	return "some error has ocurred"
 }
 
+type MapAcesss func(data interface{}, key string) (interface{}, error)
+
 type HttpGetAction struct {
 	url         string
 	auth        string
@@ -127,11 +129,18 @@ func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) err
 		req.SetHeader("Authorization", a.auth)
 	}
 
-	if a.contentType != "application/json" {
+	switch a.contentType {
+	case "application/json":
+		return a.handleJson(req, message, log)
+	default:
 		log.Sugar().
-			Errorf("only 'application/json' is supported currently, given %s", a.contentType)
+			Errorf("contentType '%s' is not supported currently", a.contentType)
 		return &SomeError{}
 	}
+
+}
+
+func (a *HttpGetAction) handleJson(req HttpReq, message *models.Message, log *zap.Logger) error {
 
 	resp, err := req.SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").Get(a.url)
@@ -140,7 +149,6 @@ func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) err
 		log.Error("Failed to fetch url", zap.Error(err))
 		return &SomeError{}
 	}
-
 	if a.tag == nil {
 		message.Output = resp.String()
 		return nil
@@ -169,5 +177,3 @@ func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) err
 	message.Output = utils.Parse(value)
 	return nil
 }
-
-type MapAcesss func(data interface{}, key string) (interface{}, error)
