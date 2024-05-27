@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -124,7 +125,7 @@ func (w *WorkerSuite) TestConsumer() {
 		w.True(true)
 	})
 
-	w.Run("Handle Action", func() {
+	w.Run("Handle Action Ok", func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -138,6 +139,24 @@ func (w *WorkerSuite) TestConsumer() {
 		receive := <-w.replyToCh
 		mockAction1.AssertExpectations(w.T())
 		w.Equal(receive.Output, "Output")
+	})
+
+	w.Run("Handle Action Error", func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		actionReplyPair := w.actions[1]
+		mockAction2 := w.mockActions[1]
+		mockAction2.On("Handle", mock.Anything, &actionReplyPair.Input).
+			Return(fmt.Errorf("some error has ocurred")).
+			Once()
+		go w.worker.Consume(ctx, actionCh)
+		action, _ := w.worker.storage.Pop()
+		actionCh <- *action
+
+		receive := <-w.replyToCh
+		mockAction2.AssertExpectations(w.T())
+		w.Equal(receive.Error, "some error has ocurred")
 	})
 
 }

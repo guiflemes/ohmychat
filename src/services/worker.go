@@ -48,6 +48,7 @@ func (w *Worker) Consume(ctx context.Context, action <-chan core.ActionReplyPair
 			err := actionPair.Action.Handle(ctx, &actionPair.Input)
 			if err != nil {
 				workerLog.Error("Error Handling Action", zap.Error(err))
+				actionPair.Input.Error = "some error has ocurred"
 			}
 
 			actionPair.ReplyTo <- actionPair.Input
