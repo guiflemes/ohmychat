@@ -17,14 +17,14 @@ type ChatBotGetter interface {
 	GetChatBot(botName string) *models.ChatBot
 }
 
-type ActionQueue interface {
+type ActionStorageService interface {
 	Put(actionPair ActionReplyPair)
 }
 
 type Engine interface {
 	Name() string
 	HandleMessage(models.Message, chan<- models.Message)
-	GetActionQueue() ActionQueue
+	GetActionStorageService() ActionStorageService
 	Config(channelName string) error
 	IsReady() bool
 }

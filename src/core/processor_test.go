@@ -19,9 +19,9 @@ func (f *FakeEgine1) HandleMessage(input models.Message, output chan<- models.Me
 	response.Output = "message processed"
 	output <- *response
 }
-func (f *FakeEgine1) GetActionQueue() ActionQueue     { return nil }
-func (f *FakeEgine1) Config(channelName string) error { return nil }
-func (f *FakeEgine1) IsReady() bool                   { return true }
+func (f *FakeEgine1) GetActionStorageService() ActionStorageService { return nil }
+func (f *FakeEgine1) Config(channelName string) error               { return nil }
+func (f *FakeEgine1) IsReady() bool                                 { return true }
 
 type FakeChatBotGetter struct{}
 

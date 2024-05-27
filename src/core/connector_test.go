@@ -61,7 +61,7 @@ type FakeConnector struct {
 	done       chan struct{}
 }
 
-func (f *FakeConnector) Acquire(input chan<- models.Message) {
+func (f *FakeConnector) Acquire(ctx context.Context, input chan<- models.Message) {
 	input <- models.Message{Input: "Hello test"}
 }
 func (f *FakeConnector) Dispatch(output models.Message) {
@@ -85,8 +85,10 @@ func (m *MultiChannelConnectorSuite) SetupTest() {
 }
 
 func (m *MultiChannelConnectorSuite) TestRequest() {
+	context, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	input := make(chan models.Message, 1)
-	go m.multiChannelConnector.Request(input)
+	go m.multiChannelConnector.Request(context, input)
 
 	r := <-input
 	m.Equal(r.Input, "Hello test")
