@@ -65,11 +65,17 @@ func RunWorker(ctx context.Context, config config.Worker, storageService Storage
 	worker := &Worker{storage: storageService}
 
 	producerWg.Add(1)
-	go worker.Produce(ctx, actionCh)
+	go func() {
+		worker.Produce(ctx, actionCh)
+		producerWg.Done()
+	}()
 
+	consumerWg.Add(config.Number)
 	for i := 0; i < config.Number; i++ {
-		consumerWg.Add(1)
-		go worker.Consume(ctx, actionCh)
+		func() {
+			go worker.Consume(ctx, actionCh)
+			consumerWg.Done()
+		}()
 	}
 
 	producerWg.Wait()

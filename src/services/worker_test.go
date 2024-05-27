@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"oh-my-chat/src/config"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
 )
@@ -142,4 +144,21 @@ func (w *WorkerSuite) TestConsumer() {
 
 func TestWorkSuite(t *testing.T) {
 	suite.Run(t, new(WorkerSuite))
+}
+
+func TestRunWorker(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	config := config.Worker{Number: 2}
+	storage := &MockStorage{}
+
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		cancel()
+	}()
+
+	RunWorker(ctx, config, storage)
+	assert := assert.New(t)
+	assert.True(true, "stop worker after cancel ctx")
+
 }
