@@ -193,14 +193,14 @@ type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
 	dialogLaunch bool
-	actionQueue  ActionQueue
+	actionQueue  ActionStorageService
 	setup        bool
 	chatRouting  ChatRoutingRule
 	repo         GuidedResponseRepo
 }
 
 func NewGuidedResponseEngine(
-	actionQueue ActionQueue,
+	actionQueue ActionStorageService,
 	repo GuidedResponseRepo,
 ) *guidedResponseEngine {
 	return &guidedResponseEngine{
@@ -260,7 +260,7 @@ func (e *guidedResponseEngine) resolveMessageNode(messageID string) {
 
 }
 
-func (e *guidedResponseEngine) GetActionQueue() ActionQueue {
+func (e *guidedResponseEngine) GetActionStorageService() ActionStorageService {
 	return e.actionQueue
 }
 
@@ -282,8 +282,8 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 
 	if e.node.Message().HasAction() {
 		actionPair := ActionReplyPair{ReplyTo: output, Action: e.node.message.Action, Input: input}
-		queue := e.GetActionQueue()
-		queue.Put(actionPair)
+		storageAction := e.GetActionStorageService()
+		storageAction.Enqueue(actionPair)
 	}
 
 	options := make([]models.Option, 0)

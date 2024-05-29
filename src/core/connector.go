@@ -64,8 +64,8 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	return m
 }
 
-func (c *multiChannelConnector) Request(input chan<- models.Message) {
-	c.connector.Acquire(input)
+func (c *multiChannelConnector) Request(ctx context.Context, input chan<- models.Message) {
+	c.connector.Acquire(ctx, input)
 }
 
 func (c *multiChannelConnector) Response(ctx context.Context, output <-chan models.Message) {

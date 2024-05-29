@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -28,7 +29,7 @@ func NewTelegramConnector(bot *models.Bot) (connector.Connector, error) {
 
 }
 
-func (t *telegram) Acquire(input chan<- models.Message) {
+func (t *telegram) Acquire(ctx context.Context, input chan<- models.Message) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -47,38 +48,49 @@ func (t *telegram) Acquire(input chan<- models.Message) {
 
 	updates := t.client.GetUpdatesChan(u)
 
-	for update := range updates {
+	for {
+		select {
+		case update := <-updates:
 
-		var m *tgbotapi.Message
+			var m *tgbotapi.Message
 
-		if update.Message != nil {
-			m = update.Message
+			if update.Message != nil {
+				m = update.Message
+			}
+
+			if update.ChannelPost != nil {
+				m = update.ChannelPost
+			}
+
+			if update.CallbackQuery != nil {
+				m = update.CallbackQuery.Message
+				m.Text = update.CallbackData()
+			}
+
+			if m == nil {
+				continue
+			}
+
+			message := models.NewMessage()
+			message.Type = models.MsgTypeUnknown
+			message.Connector = models.Telegram
+			message.ConnectorID = strconv.Itoa(m.MessageID)
+			message.Input = m.Text
+			message.Service = models.MsgServiceChat
+			message.ChannelID = strconv.FormatInt(m.Chat.ID, 10)
+			message.BotID = strconv.FormatInt(user.ID, 10)
+			message.BotName = user.UserName
+
+			input <- message
+
+		case <-ctx.Done():
+			logger.Logger.Info(
+				"context cancelled, stopping Acquire",
+				zap.String("context", "telegram_client"),
+			)
+			return
 		}
 
-		if update.ChannelPost != nil {
-			m = update.ChannelPost
-		}
-
-		if update.CallbackQuery != nil {
-			m = update.CallbackQuery.Message
-			m.Text = update.CallbackData()
-		}
-
-		if m == nil {
-			continue
-		}
-
-		message := models.NewMessage()
-		message.Type = models.MsgTypeUnknown
-		message.Connector = models.Telegram
-		message.ConnectorID = strconv.Itoa(m.MessageID)
-		message.Input = m.Text
-		message.Service = models.MsgServiceChat
-		message.ChannelID = strconv.FormatInt(m.Chat.ID, 10)
-		message.BotID = strconv.FormatInt(user.ID, 10)
-		message.BotName = user.UserName
-
-		input <- message
 	}
 }
 func (t *telegram) Dispatch(message models.Message) {

@@ -14,7 +14,7 @@ import (
 var workerLog = logger.Logger.With(zap.String("context", "worker"))
 
 type StorageService interface {
-	Pop() (*core.ActionReplyPair, bool)
+	Dequeue() (core.ActionReplyPair, bool)
 }
 
 type Worker struct {
@@ -27,9 +27,9 @@ func (w *Worker) Produce(ctx context.Context, action chan<- core.ActionReplyPair
 		case <-ctx.Done():
 			return
 		default:
-			actionPair, ok := w.storage.Pop()
+			actionPair, ok := w.storage.Dequeue()
 			if ok {
-				action <- *actionPair
+				action <- actionPair
 			}
 
 		}
