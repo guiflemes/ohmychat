@@ -2,10 +2,7 @@ package action
 
 import "oh-my-chat/src/core"
 
-type StorageActionMessage struct{}
-
-func (s *StorageActionMessage) Pop() (*core.ActionReplyPair, bool) {
-	return nil, false
+type StorageActionMessage interface {
+	Dequeue() (core.ActionReplyPair, bool)
+	Enqueue(core.ActionReplyPair)
 }
-
-func (s *StorageActionMessage) Put(core.ActionReplyPair) {}

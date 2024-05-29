@@ -18,7 +18,7 @@ type ChatBotGetter interface {
 }
 
 type ActionStorageService interface {
-	Put(actionPair ActionReplyPair)
+	Enqueue(actionPair ActionReplyPair)
 }
 
 type Engine interface {

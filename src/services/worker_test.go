@@ -16,12 +16,12 @@ import (
 )
 
 type MockStorage struct {
-	data []*core.ActionReplyPair
+	data []core.ActionReplyPair
 }
 
-func (m *MockStorage) Pop() (*core.ActionReplyPair, bool) {
+func (m *MockStorage) Dequeue() (core.ActionReplyPair, bool) {
 	if len(m.data) == 0 {
-		return nil, false
+		return core.ActionReplyPair{}, false
 	}
 
 	item := m.data[0]
@@ -43,7 +43,7 @@ func (m *MockAction) Handle(ctx context.Context, message *models.Message) error 
 type WorkerSuite struct {
 	suite.Suite
 	worker      *Worker
-	actions     []*core.ActionReplyPair
+	actions     []core.ActionReplyPair
 	mockActions []*MockAction
 	replyToCh   chan models.Message
 }
@@ -54,7 +54,7 @@ func (w *WorkerSuite) BeforeTest(suiteName, testName string) {
 	w.mockActions = []*MockAction{mockAction1, mockAction2}
 	w.replyToCh = make(chan models.Message)
 
-	w.actions = []*core.ActionReplyPair{
+	w.actions = []core.ActionReplyPair{
 		{
 			ReplyTo: w.replyToCh,
 			Input:   models.NewMessage(),
@@ -133,8 +133,8 @@ func (w *WorkerSuite) TestConsumer() {
 		mockAction1 := w.mockActions[0]
 		mockAction1.On("Handle", mock.Anything, &actionReplyPair.Input).Return(nil).Once()
 		go w.worker.Consume(ctx, actionCh)
-		action, _ := w.worker.storage.Pop()
-		actionCh <- *action
+		action, _ := w.worker.storage.Dequeue()
+		actionCh <- action
 
 		receive := <-w.replyToCh
 		mockAction1.AssertExpectations(w.T())
@@ -151,8 +151,8 @@ func (w *WorkerSuite) TestConsumer() {
 			Return(fmt.Errorf("some error has ocurred")).
 			Once()
 		go w.worker.Consume(ctx, actionCh)
-		action, _ := w.worker.storage.Pop()
-		actionCh <- *action
+		action, _ := w.worker.storage.Dequeue()
+		actionCh <- action
 
 		receive := <-w.replyToCh
 		mockAction2.AssertExpectations(w.T())

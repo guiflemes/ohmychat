@@ -10,7 +10,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"oh-my-chat/src/config"
 	"oh-my-chat/src/core"
@@ -40,7 +39,7 @@ func Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	bot := models.NewBot(models.Telegram)
 
-	storageService := &action.StorageActionMessage{}
+	storageService := action.NewMemoryQueue()
 
 	guidedEngine := core.NewGuidedResponseEngine(storageService, storage.NewLoadFileRepository())
 

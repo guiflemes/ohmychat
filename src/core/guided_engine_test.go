@@ -300,7 +300,7 @@ type MockQueue struct {
 	mock.Mock
 }
 
-func (q *MockQueue) Put(actionPair ActionReplyPair) {
+func (q *MockQueue) Enqueue(actionPair ActionReplyPair) {
 	q.Called(actionPair)
 }
 
@@ -328,7 +328,7 @@ func (g *GuidedEngineSuite) BeforeTest(suiteName, testName string) {
 
 	mockRepo := &MockRepo{tree: tree}
 	mockQueue := &MockQueue{}
-	mockQueue.On("Put", mock.AnythingOfType("ActionReplyPair")).Return()
+	mockQueue.On("Enqueue", mock.AnythingOfType("ActionReplyPair")).Return()
 
 	g.mockQueue = mockQueue
 	engine := NewGuidedResponseEngine(mockQueue, mockRepo)
@@ -430,7 +430,7 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 			if c.hasAction {
 				g.mockQueue.AssertCalled(
 					g.T(),
-					"Put",
+					"Enqueue",
 					mock.AnythingOfType("ActionReplyPair"),
 				)
 

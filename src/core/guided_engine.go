@@ -283,7 +283,7 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 	if e.node.Message().HasAction() {
 		actionPair := ActionReplyPair{ReplyTo: output, Action: e.node.message.Action, Input: input}
 		storageAction := e.GetActionStorageService()
-		storageAction.Put(actionPair)
+		storageAction.Enqueue(actionPair)
 	}
 
 	options := make([]models.Option, 0)
