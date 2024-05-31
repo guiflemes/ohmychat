@@ -1,19 +1,21 @@
 package http
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"oh-my-chat/src/config"
 	"oh-my-chat/src/utils"
 )
 
 type testCase struct {
-	desc      string
-	response  []byte
-	expect    string
-	fields    SummarizeFields
-	separator Separator
+	desc     string
+	response []byte
+	expect   string
+	fields   SummarizeFields
+	config   SummarizeConfig
 }
 
 var (
@@ -40,7 +42,7 @@ var (
 			SummarizeField{Name: "Name", Path: "name.first"},
 			SummarizeField{Name: "Dale Last name", Path: "friends.0.last"},
 		},
-		separator: ColonStyle,
+		config: SummarizeConfig{SeparatorStyle: ColonStyle, MaxInner: 10},
 	}
 	testCase2 = testCase{
 		desc: "something2",
@@ -57,13 +59,13 @@ var (
       }`),
 		expect: utils.NewStringBuilder().
 			NextLine("Friends: Dale, Roger, Jane").
-			NextLine("Name: ommitted").
+			NextLine(fmt.Sprintf("Name: %s", config.MessageOmitted)).
 			String(),
 		fields: SummarizeFields{
 			SummarizeField{Name: "Friends", Path: "friends.#.first"},
 			SummarizeField{Name: "Name", Path: "name"},
 		},
-		separator: ColonStyle,
+		config: SummarizeConfig{SeparatorStyle: ColonStyle, MaxInner: 10},
 	}
 	testCase3 = testCase{
 		desc: "something3",
@@ -95,7 +97,7 @@ var (
 			SummarizeField{Name: "Friends Ages", Path: "friends.#.age"},
 			SummarizeField{Name: "Children", Path: "children"},
 		},
-		separator: WriteSpaceStyle,
+		config: SummarizeConfig{SeparatorStyle: WriteSpaceStyle, MaxInner: 10},
 	}
 	testCase4 testCase = testCase{
 		desc: "custom style separator",
@@ -118,7 +120,7 @@ var (
 			SummarizeField{Name: "Age", Path: "age"},
 			SummarizeField{Name: "Name", Path: "name.first"},
 		},
-		separator: Separator("-> "),
+		config: SummarizeConfig{SeparatorStyle: Separator("-> "), MaxInner: 10},
 	}
 )
 
@@ -131,8 +133,8 @@ func TestSummarize(t *testing.T) {
 		testCase3,
 	} {
 		t.Run(_case.desc, func(t *testing.T) {
-			result := Summarize(_case.response, _case.fields, _case.separator)
-			assert.Equal(_case.expect, result)
+			result := Summarize(_case.response, _case.fields, _case.config)
+			assert.Equal(_case.expect, result.String())
 		})
 	}
 
