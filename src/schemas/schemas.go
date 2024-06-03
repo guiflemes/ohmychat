@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oh-my-chat/src/actions"
+	"oh-my-chat/src/actions/http"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
 )
@@ -43,7 +43,9 @@ var Actions = map[models.ModelType]decodeRawAction{
 			return nil, err
 		}
 
-		return actions.NewHttpGetAction(model), nil
+		fmt.Println(model.JsonResponseConfig.Summarize.MaxInner)
+
+		return http.NewHttpGetAction(model), nil
 
 	},
 }

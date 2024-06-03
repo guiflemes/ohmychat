@@ -22,7 +22,15 @@ intents:
             headers:
               authorization: ""
               content_type: application/json
-            response_field: abilities[1].ability.name
+            json_response_config:
+              summarize:
+                separator: colon
+                max_inner: 10
+                fields:
+                  - name: skill 1
+                    path: abilities.0.ability.name
+                  - name: skill 2
+                    path: abilities.1.ability.name
       - content: Habiliades do butterfree
         name: Butterfree
         key: butterfree    
@@ -33,7 +41,15 @@ intents:
             headers:
               authorization: ""
               content_type: application/json
-            response_field: abilities[1].ability.name
+            json_response_config:
+              summarize:
+                separator: pipe
+                max_inner: 10
+                fields:
+                  - name: skill 1
+                    path: abilities.0.ability.name
+                  - name: skill 2
+                    path: abilities.1.ability.name
   - name: Fodões
     key: fodoes
     options:
@@ -47,7 +63,12 @@ intents:
             headers:
               authorization: ""
               content_type: application/json
-            response_field: abilities[1].ability.name
+            json_response_config:
+              summarize:
+                max_inner: 10
+                fields:
+                  - path: abilities.0.ability.name
+                  - path: abilities.1.ability.name
       - content: Habiliades do mewtwo
         name: Mewtwo
         key: mewtwo
@@ -58,5 +79,13 @@ intents:
             headers:
               authorization: ""
               content_type: application/json
-            response_field: abilities[1].ability.name
+            json_response_config:
+              summarize:
+                separator: " -> "
+                max_inner: 10
+                fields:
+                  - name: skill 1  
+                    path: abilities.0.ability.name
+                  - name: skill 2  
+                  - path: abilities.1.ability.name
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"oh-my-chat/src/actions"
+	"oh-my-chat/src/actions/http"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
 )
@@ -51,7 +51,7 @@ func TestDecodeAction(t *testing.T) {
 		{
 			desc:               "decode HttpGetModel",
 			model:              httpGetModel,
-			expectedActionType: &actions.HttpGetAction{},
+			expectedActionType: &http.HttpGetAction{},
 			expectedError:      nil,
 		},
 	} {
