@@ -122,6 +122,70 @@ var (
 		},
 		config: SummarizeConfig{SeparatorStyle: Separator("-> "), MaxInner: 10},
 	}
+	testCase5 testCase = testCase{
+		desc: "custom style separator",
+		response: []byte(`{
+      "age":37,
+      "children": ["Sara","Alex","Jack"],
+      "fav.movie": "Deer Hunter",
+      "friends": [
+        {"age": 44, "first": "Dale", "last": "Murphy"},
+        {"age": 68, "first": "Roger", "last": "Craig"},
+        {"age": 47, "first": "Jane", "last": "Murphy"}
+      ],
+      "name": {"first": "Tom", "last": "Anderson"}
+      }`),
+		expect: utils.NewStringBuilder().
+			NextLine("37").
+			NextLine("Tom").
+			String(),
+		fields: SummarizeFields{
+			SummarizeField{Name: "", Path: "age"},
+			SummarizeField{Name: "", Path: "name.first"},
+		},
+		config: SummarizeConfig{MaxInner: 10},
+	}
+	testCase6 testCase = testCase{
+		desc: "omitt value",
+		response: []byte(`{
+      "age":37,
+      "children": ["Sara","Alex","Jack"],
+      "fav.movie": "Deer Hunter",
+      "friends": [
+        {"age": 44, "first": "Dale", "last": "Murphy"},
+        {"age": 68, "first": "Roger", "last": "Craig"},
+        {"age": 47, "first": "Jane", "last": "Murphy"}
+      ],
+      "name": {"first": "Tom", "last": "Anderson"}
+      }`),
+		expect: utils.NewStringBuilder().
+			NextLine(config.MessageOmitted).
+			String(),
+		fields: SummarizeFields{
+			SummarizeField{Name: "", Path: "friends"},
+		},
+		config: SummarizeConfig{MaxInner: 10},
+	}
+	//fix it when array handle is done
+	testCase7 testCase = testCase{
+		desc: "test array fix it",
+		response: []byte(`[{
+      "age":37,
+      "children": ["Sara","Alex","Jack"],
+      "fav.movie": "Deer Hunter",
+      "friends": [
+        {"age": 44, "first": "Dale", "last": "Murphy"},
+        {"age": 68, "first": "Roger", "last": "Craig"},
+        {"age": 47, "first": "Jane", "last": "Murphy"}
+      ],
+      "name": {"first": "Tom", "last": "Anderson"}
+      }]`),
+		expect: "Not implemented",
+		fields: SummarizeFields{
+			SummarizeField{Name: "", Path: "friends"},
+		},
+		config: SummarizeConfig{MaxInner: 10},
+	}
 )
 
 func TestSummarize(t *testing.T) {
@@ -131,6 +195,10 @@ func TestSummarize(t *testing.T) {
 		testCase1,
 		testCase2,
 		testCase3,
+		testCase4,
+		testCase5,
+		testCase6,
+		testCase7,
 	} {
 		t.Run(_case.desc, func(t *testing.T) {
 			result := Summarize(_case.response, _case.fields, _case.config)

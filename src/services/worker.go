@@ -80,7 +80,7 @@ func RunWorker(ctx context.Context, config config.Worker, storageService Storage
 	}
 
 	producerWg.Wait()
-	workerLog.Debug("Closing procuder")
+	workerLog.Debug("Closing producer")
 	close(actionCh)
 
 	consumerWg.Wait()

@@ -11,12 +11,18 @@ import (
 
 // Name is used to represent the name the user will see in the message
 // Path is which value you want to access
+// If Name is set to empty, the function will return a message containing
+// only the value, ignoring the name and the specified separator.
 type SummarizeField struct {
 	Name string
 	Path string
 }
 
 type SummarizeFields []SummarizeField
+
+func (s SummarizeFields) IsEmpty() bool {
+	return len(s) == 0
+}
 
 // Separator defines different styles of separators that can be used in the Summarize function.
 // Predefined styles include:
@@ -37,12 +43,12 @@ type Separator string
 const (
 	WriteSpaceStyle Separator = " "
 	ColonStyle                = ": "
-	SemmiColonStyle           = "; "
-	UnderscoreStyle           = "_ "
-	HyphenStyle               = "- "
-	PipeStyle                 = "| "
+	HyphenStyle               = " - "
+	PipeStyle                 = " | "
 )
 
+// MaxInner specifies the maximum number of items to include if the inline object is an array.
+// SeparatorStyle defines the separator to use between key and value.
 type SummarizeConfig struct {
 	MaxInner       int
 	SeparatorStyle Separator
@@ -60,7 +66,7 @@ func (s Summarized) String() string {
 	if !s.IsArray() {
 		return s.value[0]
 	}
-	return ""
+	return "Not implemented"
 }
 
 func (s Summarized) Stream() error {
@@ -68,9 +74,10 @@ func (s Summarized) Stream() error {
 }
 
 func Summarize(response []byte, fields SummarizeFields, config SummarizeConfig) Summarized {
+
 	parsed := gjson.ParseBytes(response)
 	if parsed.IsArray() {
-		return Summarized{}
+		return Summarized{value: []string{"not implemented", "not implemented"}}
 	}
 	msg := summarize(parsed, fields, config)
 	return Summarized{value: []string{msg}}
@@ -80,13 +87,20 @@ func summarize(response gjson.Result, fields SummarizeFields, summConfig Summari
 	output := utils.NewStringBuilder()
 	separator := summConfig.SeparatorStyle
 
+	summarizeFn := func(name, value string) string {
+		if name == "" {
+			return value
+		}
+		return name + string(separator) + value
+	}
+
 	for _, field := range fields {
 		var value string
 		result := response.Get(field.Path)
 
 		if result.IsObject() {
 			value = config.MessageOmitted
-			summarized := field.Name + string(separator) + value
+			summarized := summarizeFn(field.Name, value)
 			output.NextLine(summarized)
 			continue
 		}
@@ -110,13 +124,13 @@ func summarize(response gjson.Result, fields SummarizeFields, summConfig Summari
 				}
 			}
 
-			summarized := field.Name + string(separator) + value
+			summarized := summarizeFn(field.Name, value)
 			output.NextLine(summarized)
 			continue
 		}
 
 		value = innerSummarize(result)
-		summarized := field.Name + string(separator) + value
+		summarized := summarizeFn(field.Name, value)
 		output.NextLine(summarized)
 	}
 
