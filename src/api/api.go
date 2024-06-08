@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -43,7 +44,7 @@ func RunApi(ctx context.Context, conf config.Api, handler http.Handler) {
 		<-ctx.Done()
 		logging.Debug("Stopping API")
 
-		shutdown, cancel := context.WithTimeout(servCtx, 30*time.Duration)
+		shutdown, cancel := context.WithTimeout(servCtx, 30*time.Minute)
 		err := server.Shutdown(shutdown)
 		if err != nil {
 			logging.Error("error shutdown API", zap.Error(err))
