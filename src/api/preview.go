@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -58,18 +58,44 @@ func (p *PreviewApi) JsonResponse(w http.ResponseWriter, r *http.Request) {
 		err = handler.Handle(ctx, &message)
 
 		if err != nil {
+			previewLog.Error("Error handling message", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "Error handling message`))
+			w.Write([]byte(`{"error": "Error handling message"}`))
 			return
 		}
-		w.Write([]byte(fmt.Sprintf(`{"preview": "%s"}`, message.Output)))
+
+		resp, err := p.makeResponse(message.Output)
+		if err != nil {
+			previewLog.Error("Error handling message", zap.Error(err))
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error": "Error handling message"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
 		return
 	case "post":
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "not implemented yet"`))
+		w.Write([]byte(`{"error": "not implemented yet"}`))
 	default:
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "action must be 'post' or 'get'"`))
+		w.Write([]byte(`{"error": "action must be 'post' or 'get'"}`))
 	}
 
+}
+
+func (p *PreviewApi) makeResponse(output string) ([]byte, error) {
+	fields := strings.Split(output, "\n")
+	data := PreviewData{Fields: fields}
+	b, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+type PreviewData struct {
+	Fields []string `json:"fields"`
 }

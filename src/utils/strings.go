@@ -15,7 +15,11 @@ func (s *stringBuilder) String() string {
 }
 
 func (s *stringBuilder) NextLine(str string) *stringBuilder {
-	s.str += str + "\n"
+	if len(s.str) > 0 {
+		s.str += "\n"
+	}
+
+	s.str += str
 	return s
 }
 

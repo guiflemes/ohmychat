@@ -12,9 +12,8 @@ type Summarize struct {
 }
 
 type JsonResponseConfig struct {
-	ItemsPerMessage     int       `json:"items_per_message"    yaml:"items_per_message"`
-	Summarize           Summarize `json:"summarize"            yaml:"summarize"`
-	TruncationIndicator string    `json:"truncation_indicator" yaml:"truncation_indicator"`
+	ItemsPerMessage int       `json:"items_per_message" yaml:"items_per_message"`
+	Summarize       Summarize `json:"summarize"         yaml:"summarize"`
 }
 
 type Headers struct {
@@ -25,7 +24,6 @@ type Headers struct {
 type HttpGetModel struct {
 	Url                string             `yaml:"url"                  json:"url"`
 	Headers            Headers            `yaml:"headers"              json:"headers"`
-	ResponseField      string             `yaml:"response_field"       json:"response_field"`
 	TimeOut            int                `yaml:"timeout"              json:"timeout"`
 	JsonResponseConfig JsonResponseConfig `yaml:"json_response_config" json:"json_response_config"`
 }

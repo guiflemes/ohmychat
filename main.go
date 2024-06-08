@@ -16,7 +16,10 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	config := config.OhMyChatConfig{Worker: config.Worker{Enabled: true, Number: 1}}
+	config := config.OhMyChatConfig{
+		Worker: config.Worker{Enabled: true, Number: 1},
+		Api:    config.Api{Enabled: true, Port: 8000},
+	}
 
 	app.Run(config)
 }

@@ -56,6 +56,7 @@ func RunApi(ctx context.Context, conf config.Api, handler http.Handler) {
 
 	}()
 
+	logging.Sugar().Infof("Server running on %s", server.Addr)
 	<-servCtx.Done()
 	logging.Debug("API server stopped")
 
