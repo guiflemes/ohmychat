@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -86,16 +87,6 @@ func NewHttpGetAction(model *models.HttpGetModel) *HttpGetAction {
 	}
 }
 
-type TagAcess struct {
-	Key string
-}
-
-type SomeError struct{}
-
-func (e *SomeError) Error() string {
-	return "some error has ocurred"
-}
-
 type HttpGetAction struct {
 	url          string
 	auth         string
@@ -127,10 +118,14 @@ func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) err
 	switch a.contentType {
 	case "application/json":
 		return a.handleJson(req, message)
+	case "":
+		logging.Sugar().
+			Error("contentType cannot be empty")
+		return errors.New("contentType cannot be empty")
 	default:
 		logging.Sugar().
 			Errorf("contentType '%s' is not supported currently", a.contentType)
-		return &SomeError{}
+		return fmt.Errorf("contentType '%s' is not supported currently", a.contentType)
 	}
 
 }
