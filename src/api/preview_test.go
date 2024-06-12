@@ -24,12 +24,22 @@ func fakeHandlerPreview(w http.ResponseWriter, r *http.Request) {
     "list": [
       "item1",
       "item2",
-      {
-        "subKey1": "sub value 1",
-        "subKey2": false
-      }
-    ]
-  }
+    ],
+  },
+  "caca": [ 
+    {
+      "subKey1": "value1",
+      "subKey2": false
+    },
+    {
+      "subKey1": "value2",
+      "subKey2": false
+    },
+    {
+      "subKey1": "value3",
+      "subKey2": false
+    },
+  ],
 }`)
 	w.Write(jsonData)
 }
@@ -51,7 +61,7 @@ func TestJsonPreview(t *testing.T) {
 
 	for _, _case := range []testCase{
 		{
-			Desc:     "all ok",
+			Desc:     "get nested key",
 			Method:   http.MethodPost,
 			QueryStr: "action=get",
 			Model: models.HttpGetModel{
@@ -71,6 +81,69 @@ func TestJsonPreview(t *testing.T) {
 			},
 			ExpectedStatus: http.StatusOK,
 			ExpectedResult: PreviewData{Fields: []string{"Teste1: nested value 1", "Teste2: value"}},
+		},
+		{
+			Desc:     "get inner list values",
+			Method:   http.MethodPost,
+			QueryStr: "action=get",
+			Model: models.HttpGetModel{
+				Url:     mockServer.URL,
+				Headers: models.Headers{ContentType: "application/json"},
+				TimeOut: 60,
+				JsonResponseConfig: models.JsonResponseConfig{
+					Summarize: models.Summarize{
+						Separator: "colon",
+						MaxInner:  10,
+						SummarizeFields: []models.SummarizeField{
+							{Name: "Teste1", Path: "nestedObject.list"},
+						},
+					},
+				},
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedResult: PreviewData{Fields: []string{"Teste1: item1, item2"}},
+		},
+		{
+			Desc:     "omitted, it tries to access a struct into array without a specific key",
+			Method:   http.MethodPost,
+			QueryStr: "action=get",
+			Model: models.HttpGetModel{
+				Url:     mockServer.URL,
+				Headers: models.Headers{ContentType: "application/json"},
+				TimeOut: 60,
+				JsonResponseConfig: models.JsonResponseConfig{
+					Summarize: models.Summarize{
+						Separator: "colon",
+						MaxInner:  10,
+						SummarizeFields: []models.SummarizeField{
+							{Path: "caca"},
+						},
+					},
+				},
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedResult: PreviewData{Fields: []string{"omitted"}},
+		},
+		{
+			Desc:     "get value from key into array of structs",
+			Method:   http.MethodPost,
+			QueryStr: "action=get",
+			Model: models.HttpGetModel{
+				Url:     mockServer.URL,
+				Headers: models.Headers{ContentType: "application/json"},
+				TimeOut: 60,
+				JsonResponseConfig: models.JsonResponseConfig{
+					Summarize: models.Summarize{
+						Separator: "colon",
+						MaxInner:  2,
+						SummarizeFields: []models.SummarizeField{
+							{Path: "caca.#.subKey1"},
+						},
+					},
+				},
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedResult: PreviewData{Fields: []string{"value1, value2, ..."}},
 		},
 	} {
 		t.Run(_case.Desc, func(t *testing.T) {

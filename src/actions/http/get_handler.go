@@ -87,16 +87,6 @@ func NewHttpGetAction(model *models.HttpGetModel) *HttpGetAction {
 	}
 }
 
-type TagAcess struct {
-	Key string
-}
-
-type SomeError struct{}
-
-func (e *SomeError) Error() string {
-	return "some error has ocurred"
-}
-
 type HttpGetAction struct {
 	url          string
 	auth         string
