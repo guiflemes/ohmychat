@@ -5,8 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"oh-my-chat/src/app"
-	"oh-my-chat/src/config"
+	"oh-my-chat/cmd/ohmychat"
 )
 
 func main() {
@@ -16,10 +15,13 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	config := config.OhMyChatConfig{
-		Worker: config.Worker{Enabled: true, Number: 1},
-		Api:    config.Api{Enabled: true, Port: 8000},
-	}
+	// config := config.OhMyChatConfig{
+	// 	Worker:    config.Worker{Enabled: true, Number: 1},
+	// 	Api:       config.Api{Enabled: true, Port: 8000},
+	// 	Connector: config.Connector{Provider: "Telegram"},
+	// }
+	//
+	// app.Run(config)
 
-	app.Run(config)
+	ohmychat.RunCli()
 }

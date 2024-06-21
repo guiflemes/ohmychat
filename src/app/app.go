@@ -29,7 +29,7 @@ func Run(config config.OhMyChatConfig) {
 			outputMsg = make(chan models.Message, 1)
 		)
 		ctx, cancel := context.WithCancel(context.Background())
-		bot := models.NewBot(models.Telegram)
+		bot := models.NewBot(config.Connector)
 
 		storageService := action.NewMemoryQueue()
 

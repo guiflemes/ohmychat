@@ -1,6 +1,9 @@
 package models
 
-import "oh-my-chat/settings"
+import (
+	"oh-my-chat/settings"
+	"oh-my-chat/src/config"
+)
 
 type Bot struct {
 	ChatConnector  MessageConnector
@@ -8,9 +11,9 @@ type Bot struct {
 	IsReady        string
 }
 
-func NewBot(conn MessageConnector) *Bot {
+func NewBot(conn config.Connector) *Bot {
 	return &Bot{
-		ChatConnector:  conn,
+		ChatConnector:  MessageConnector(conn.Provider),
 		TelegramConfig: TelegramConfig{Token: settings.GETENV("TELEGRAM_TOKEN")},
 	}
 }

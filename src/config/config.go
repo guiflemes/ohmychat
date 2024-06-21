@@ -14,7 +14,12 @@ const (
 	MessageOmitted string = "omitted"
 )
 
+type Connector struct {
+	Provider string
+}
+
 type OhMyChatConfig struct {
-	Api    Api
-	Worker Worker
+	Api       Api
+	Worker    Worker
+	Connector Connector
 }

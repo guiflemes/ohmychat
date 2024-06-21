@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/connector"
+	"oh-my-chat/src/connector/cli"
 	"oh-my-chat/src/connector/telegram"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
@@ -23,6 +24,7 @@ type GetConnectors func() map[models.MessageConnector]NewConnector
 func Connectors() map[models.MessageConnector]NewConnector {
 	return map[models.MessageConnector]NewConnector{
 		models.Telegram: telegram.NewTelegramConnector,
+		models.Cli:      cli.NewCliConnector,
 	}
 }
 
