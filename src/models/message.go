@@ -32,6 +32,7 @@ type ResponseType int
 
 const (
 	OptionResponse ResponseType = iota
+	TextResponse
 )
 
 type Meta struct {

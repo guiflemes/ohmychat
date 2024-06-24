@@ -13,65 +13,58 @@ import (
 
 type CliMessage struct {
 	Text string
-	ctx  *ishell.Context
 }
 
 type cliConnector struct {
-	shell *ishell.Shell
-	msgCh chan CliMessage
+	bot *CliBot
 }
 
 func NewCliConnector(bot *models.Bot) (connector.Connector, error) {
 	shell := ishell.New()
-	msgCh := make(chan CliMessage, 1)
 
 	go func() { shell.Run() }()
+
+	cliBot := NewCliBot()
+	conn := &cliConnector{bot: cliBot}
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "chat",
 		Help: "Marvin",
 		Func: func(c *ishell.Context) {
-			startChat(c, msgCh)
+			cliBot.StartChat(c)
 		},
 	})
-	return &cliConnector{
-		shell: shell,
-		msgCh: msgCh,
-	}, nil
-}
 
-func startChat(c *ishell.Context, msgCh chan<- CliMessage) {
-	for {
-		input := c.ReadLine()
-		if input == "exit" {
-			c.Println("Exiting chat mode...")
-			break
-		}
-
-		msgCh <- CliMessage{Text: input, ctx: c}
-	}
+	return conn, nil
 }
 
 func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Message) {
 
+	updates := cli.bot.GetUpdateChanels()
+
 	for {
 		select {
 		case <-ctx.Done():
-			cli.shell.Close()
+			cli.bot.StopReceivingUpdates()
 			fmt.Println("sutdown shell")
 			return
-		case msg := <-cli.msgCh:
+		case update := <-updates:
 			message := models.NewMessage()
 			message.Type = models.MsgTypeUnknown
 			message.Connector = models.Cli
 			message.ConnectorID = ""
-			message.Input = msg.Text
+			message.Input = update.Message.Text
 			message.Service = models.MsgServiceChat
 			message.ChannelID = ""
 			message.BotID = ""
 			message.BotName = "bot"
 
-			cli.shell.Println("input ", msg.Text)
+			//TODO used to text remove this block and Dispatch
+			if update.Message.Text == "text" {
+				message.ResponseType = models.TextResponse
+			}
+			cli.Dispatch(message)
+
 		default:
 		}
 	}
@@ -79,14 +72,20 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 }
 
 func (cli *cliConnector) Dispatch(message models.Message) {
+	resposeMsg := NewMessage(message.Input)
+
 	switch message.ResponseType {
 	case models.OptionResponse:
 		options := utils.Map(message.Options, func(o models.Option) string {
 			return o.Name
 		})
-		cli.shell.Println(options)
-
+		options = append(options, "text")
+		options = append(options, "test2")
+		options = append(options, "test3")
+		resposeMsg.MultiChoice = options
 	default:
 	}
+
+	cli.bot.SendMessage(resposeMsg)
 
 }
