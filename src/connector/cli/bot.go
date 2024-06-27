@@ -6,17 +6,47 @@ import (
 	"github.com/abiosoft/ishell"
 
 	"oh-my-chat/src/logger"
+	"oh-my-chat/src/models"
 )
+
+func NewCliBot(botConfig *models.Bot) *CliBot {
+	shell := ishell.New()
+
+	go func() { shell.Run() }()
+
+	cliBot := newCliBot()
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "chat",
+		Help: "start ohmychat",
+		Func: func(c *ishell.Context) {
+			cliBot.StartChat(c)
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "workflow",
+		Help: "choose a workflow to start a chat",
+		Func: func(c *ishell.Context) {
+			workflows := []string{"cli_test"}
+			choice := c.MultiChoice(workflows, "select a workflow")
+			cliBot.workflow = workflows[choice]
+		},
+	})
+	return cliBot
+}
 
 func NewMessage(text string) Message {
 	return Message{MessageID: 1, Date: time.Now(), Text: text}
 }
 
 type Message struct {
-	MessageID   int
-	Date        time.Time
-	Text        string
-	MultiChoice []string
+	BotName         string
+	MessageID       int
+	Date            time.Time
+	Text            string
+	MultiChoice     []string
+	UnBlockByAction bool
 }
 
 func (m Message) IsMultiChoice() bool {
@@ -38,9 +68,11 @@ type CliBot struct {
 	lastReplyMsg    Message
 	multiChoiceCh   chan Message
 	blocked         bool
+	workflow        string
 }
 
-func NewCliBot() *CliBot {
+func newCliBot() *CliBot {
+
 	return &CliBot{
 		Buffer:          10,
 		shutdownChannel: make(chan struct{}, 1),
@@ -59,6 +91,7 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 
 	for {
 		select {
+
 		case message, ok := <-bot.multiChoiceCh:
 			if ok {
 				choice := bot.shellCtxt.MultiChoice(message.MultiChoice, "Escolha sua opção:")
@@ -101,6 +134,7 @@ func (bot *CliBot) GetUpdateChanels() UpdateChannel {
 				ch <- Update{
 					UpdateID: 1,
 					Message: &Message{
+						BotName:   bot.workflow,
 						MessageID: 0,
 						Date:      time.Now(),
 						Text:      receive,
@@ -131,6 +165,9 @@ func (bot *CliBot) SendMessage(message Message) {
 		return
 	}
 
-	bot.shellCtxt.Println("reply", message.Text)
-	bot.blocked = false
+	bot.shellCtxt.Println(message.Text)
+	if message.UnBlockByAction {
+		bot.blocked = false
+	}
+
 }

@@ -14,8 +14,15 @@ const (
 	MessageOmitted string = "omitted"
 )
 
+type Provider string
+
+const (
+	Telegram Provider = "telegram"
+	Cli      Provider = "cli"
+)
+
 type Connector struct {
-	Provider string
+	Provider Provider
 }
 
 type OhMyChatConfig struct {

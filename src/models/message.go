@@ -74,6 +74,7 @@ type Message struct {
 	EndTime      int64            `json:"end_time"`
 	ResponseType ResponseType     `json:"response_type"`
 	Meta         *Meta            `json:"meta"`
+	ActionDone   bool
 }
 
 func NewMessage() Message {
