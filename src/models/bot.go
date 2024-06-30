@@ -9,6 +9,7 @@ type Bot struct {
 	ChatConnector  MessageConnector
 	TelegramConfig TelegramConfig
 	IsReady        string
+	CliConfig      CliConfig
 }
 
 func NewBot(conn config.Connector) *Bot {
@@ -27,3 +28,5 @@ type ChatBot struct {
 	Engine     string
 	WorkflowID string
 }
+
+type CliConfig struct{}

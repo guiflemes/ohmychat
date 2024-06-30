@@ -13,7 +13,7 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 	shell := ishell.New()
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
-		if count >= 2 {
+		if count >= 1 {
 			c.Println("Interrupted")
 			shell.Stop()
 		}
@@ -24,7 +24,7 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 		shell.Run()
 	}()
 
-	cliBot := newCliBot()
+	cliBot := newCliBot(func() []string { return []string{"cli_test"} })
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "chat",
@@ -34,15 +34,6 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 		},
 	})
 
-	shell.AddCmd(&ishell.Cmd{
-		Name: "workflow",
-		Help: "choose a workflow to start a chat",
-		Func: func(c *ishell.Context) {
-			workflows := []string{"cli_test"}
-			choice := c.MultiChoice(workflows, "select a workflow")
-			cliBot.workflow = workflows[choice]
-		},
-	})
 	return cliBot
 }
 
@@ -70,18 +61,20 @@ type Update struct {
 
 type UpdateChannel <-chan Update
 
+type ListWorflows func() []string
+
 type CliBot struct {
 	Buffer          int
 	shutdownChannel chan struct{}
 	receiveCh       chan string
 	shellCtxt       *ishell.Context
-	lastReplyMsg    Message
 	multiChoiceCh   chan Message
 	blocked         bool
 	workflow        string
+	listWorflows    ListWorflows
 }
 
-func newCliBot() *CliBot {
+func newCliBot(listWorflows ListWorflows) *CliBot {
 
 	return &CliBot{
 		Buffer:          10,
@@ -89,6 +82,7 @@ func newCliBot() *CliBot {
 		receiveCh:       make(chan string, 10),
 		multiChoiceCh:   make(chan Message, 1),
 		blocked:         false,
+		listWorflows:    listWorflows,
 	}
 }
 
@@ -99,12 +93,16 @@ func (bot *CliBot) IsRunning() bool {
 func (bot *CliBot) StartChat(c *ishell.Context) {
 	bot.shellCtxt = c
 
+	workflows := bot.listWorflows()
+	choice := c.MultiChoice(workflows, "select a workflow")
+	bot.workflow = workflows[choice]
+
 	for {
 		select {
 
 		case message, ok := <-bot.multiChoiceCh:
 			if ok {
-				choice := bot.shellCtxt.MultiChoice(message.MultiChoice, "Escolha sua opção:")
+				choice := bot.shellCtxt.MultiChoice(message.MultiChoice, "select your choice:")
 				bot.receiveCh <- message.MultiChoice[choice]
 				break
 			}
@@ -163,7 +161,6 @@ func (bot *CliBot) StopReceivingUpdates() {
 }
 
 func (bot *CliBot) SendMessage(message Message) {
-	bot.lastReplyMsg = message
 
 	if !bot.IsRunning() {
 		logger.Logger.Warn("message dit not send, shell ctx is nil")
