@@ -1,4 +1,4 @@
-package storage
+package chat
 
 import (
 	"sync"
@@ -20,6 +20,18 @@ func (m *MemoryChatbotRepo) GetChatBot(botName string) *models.ChatBot {
 		return nil
 	}
 	return chatbot
+}
+
+func (m *MemoryChatbotRepo) ListChatBots() []*models.ChatBot {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	bots := make([]*models.ChatBot, 0, len(m.bots))
+
+	for _, bot := range m.bots {
+		bots = append(bots, bot)
+	}
+
+	return bots
 }
 
 func NewMemoryChatbotRepo() *MemoryChatbotRepo {

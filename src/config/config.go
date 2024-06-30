@@ -1,5 +1,7 @@
 package config
 
+import "oh-my-chat/settings"
+
 type Worker struct {
 	Enabled bool
 	Number  int
@@ -23,6 +25,11 @@ const (
 
 type Connector struct {
 	Provider Provider
+}
+
+type ChatDatabase struct {
+	Kind     string
+	Settings map[string]any
 }
 
 type OhMyChatConfig struct {

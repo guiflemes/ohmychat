@@ -17,6 +17,7 @@ import (
 	"oh-my-chat/src/services"
 	"oh-my-chat/src/storage"
 	"oh-my-chat/src/storage/action"
+	chatstorage "oh-my-chat/src/storage/chat"
 )
 
 func Run(config config.OhMyChatConfig) {
@@ -38,7 +39,10 @@ func Run(config config.OhMyChatConfig) {
 			storage.NewLoadFileRepository(),
 		)
 
-		processor := core.NewProcessor(storage.NewMemoryChatbotRepo(), core.Engines{guidedEngine})
+		processor := core.NewProcessor(
+			chatstorage.NewMemoryChatbotRepo(),
+			core.Engines{guidedEngine},
+		)
 		connector := core.NewMuitiChannelConnector(bot)
 
 		sign := make(chan os.Signal, 1)
