@@ -12,7 +12,17 @@ import (
 func NewCliBot(botConfig *models.Bot) *CliBot {
 	shell := ishell.New()
 
-	go func() { shell.Run() }()
+	shell.Interrupt(func(c *ishell.Context, count int, input string) {
+		if count >= 2 {
+			c.Println("Interrupted")
+			shell.Stop()
+		}
+		c.Println("Input Ctrl-c once more to exit")
+	})
+
+	go func() {
+		shell.Run()
+	}()
 
 	cliBot := newCliBot()
 

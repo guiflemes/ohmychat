@@ -42,7 +42,7 @@ func Run(config config.OhMyChatConfig) {
 		connector := core.NewMuitiChannelConnector(bot)
 
 		sign := make(chan os.Signal, 1)
-		signal.Notify(sign, syscall.SIGTERM, os.Interrupt)
+		signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
 
 		go func() {
 			sig := <-sign

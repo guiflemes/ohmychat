@@ -26,7 +26,6 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 	for {
 		select {
 		case <-ctx.Done():
-			cli.bot.StopReceivingUpdates()
 			fmt.Println("sutdown shell")
 			return
 		case update := <-updates:
