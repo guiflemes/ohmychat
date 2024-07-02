@@ -71,8 +71,6 @@ func (r *restyReqAdapter) Get(url string) (HttpResp, error) {
 	return &restyRespAdapter{resp: resp}, nil
 }
 
-var logging = logger.Logger.With(zap.String("action", "get_http"))
-
 func NewHttpGetAction(model *models.HttpGetModel) *HttpGetAction {
 	client_adapter := &restyHttpClientAdapter{client: resty.New()}
 	jsonResponseHandler := NewHttpJsonResponseHandler(model.JsonResponseConfig)
@@ -98,6 +96,7 @@ type HttpGetAction struct {
 
 func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) error {
 	//create something to replace values in url for exempe www.test.com/{invoice_id}  -> message.Input = "invoice_id"
+	logging := logger.Logger.With(zap.String("action", "get_http"))
 	logging.With(
 		zap.String("url", a.url),
 		zap.String("provider", string(message.Connector)),
@@ -131,6 +130,7 @@ func (a *HttpGetAction) Handle(ctx context.Context, message *models.Message) err
 }
 
 func (a *HttpGetAction) handleJson(req HttpReq, message *models.Message) error {
+	logging := logger.Logger.With(zap.String("action", "get_http"))
 
 	resp, err := req.SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").Get(a.url)

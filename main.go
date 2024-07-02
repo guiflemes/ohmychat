@@ -1,20 +1,23 @@
 package main
 
 import (
-	"log"
-
 	"github.com/joho/godotenv"
 
+	"oh-my-chat/settings"
 	"oh-my-chat/src/app"
 	"oh-my-chat/src/config"
+	"oh-my-chat/src/logger"
 )
 
 func main() {
 
 	err := godotenv.Load()
+
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		panic("Error loading .env file")
 	}
+
+	logger.InitLog(settings.GetEnvOrDefault("LOGGER", "develop"))
 
 	config := config.OhMyChatConfig{
 		Worker:       config.Worker{Enabled: true, Number: 1},
@@ -25,5 +28,4 @@ func main() {
 
 	app.Run(config)
 
-	// ohmychat.RunCli()
 }

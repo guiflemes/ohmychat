@@ -11,8 +11,6 @@ import (
 	"oh-my-chat/src/logger"
 )
 
-var workerLog = logger.Logger.With(zap.String("context", "worker"))
-
 type StorageService interface {
 	Dequeue() (core.ActionReplyPair, bool)
 }
@@ -37,7 +35,7 @@ func (w *Worker) Produce(ctx context.Context, action chan<- core.ActionReplyPair
 }
 
 func (w *Worker) Consume(ctx context.Context, action <-chan core.ActionReplyPair) {
-
+	workerLog := logger.Logger.With(zap.String("context", "worker"))
 	for {
 		select {
 
@@ -61,6 +59,8 @@ func (w *Worker) Consume(ctx context.Context, action <-chan core.ActionReplyPair
 }
 
 func RunWorker(ctx context.Context, config config.Worker, storageService StorageService) {
+	workerLog := logger.Logger.With(zap.String("context", "worker"))
+
 	actionCh := make(chan core.ActionReplyPair)
 	var producerWg sync.WaitGroup
 	var consumerWg sync.WaitGroup

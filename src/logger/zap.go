@@ -9,23 +9,16 @@ import (
 
 var Logger *zap.Logger
 
-func init() {
-	Logger = env_logger()
-}
+func InitLog(env string) {
 
-func env_logger() *zap.Logger {
-	env := "disable"
-
-	if env == "production" {
-		return productionLogger()
+	switch env {
+	case "production":
+		Logger = productionLogger()
+	case "disable":
+		Logger = zap.NewNop()
+	default:
+		Logger = developmentLogger()
 	}
-
-	if env == "disable" {
-		return zap.NewNop()
-	}
-
-	return developmentLogger()
-
 }
 
 func developmentLogger() *zap.Logger {
