@@ -9,7 +9,7 @@ import (
 
 type ChatDatabase interface {
 	GetChatBot(botName string) *models.ChatBot
-	ListChatBots() []*models.ChatBot
+	ListChatBots() *models.ChatBotCollection
 }
 
 func NewConnection(config config.ChatDatabase) (ChatDatabase, error) {

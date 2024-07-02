@@ -1,7 +1,5 @@
 package config
 
-import "oh-my-chat/settings"
-
 type Worker struct {
 	Enabled bool
 	Number  int
@@ -33,7 +31,8 @@ type ChatDatabase struct {
 }
 
 type OhMyChatConfig struct {
-	Api       Api
-	Worker    Worker
-	Connector Connector
+	Api          Api
+	Worker       Worker
+	Connector    Connector
+	ChatDatabase ChatDatabase
 }

@@ -10,6 +10,13 @@ import (
 )
 
 func NewCliBot(botConfig *models.Bot) *CliBot {
+
+	listWorflows := botConfig.CliDependencies.ListWorkflows
+
+	if listWorflows == nil || len(listWorflows()) == 0 {
+		panic("cli has not workflows")
+	}
+
 	shell := ishell.New()
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
@@ -24,7 +31,7 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 		shell.Run()
 	}()
 
-	cliBot := newCliBot(func() []string { return []string{"cli_test"} })
+	cliBot := newCliBot(listWorflows())
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "chat",
@@ -61,7 +68,7 @@ type Update struct {
 
 type UpdateChannel <-chan Update
 
-type ListWorflows func() []string
+type ListWorflows []string
 
 type CliBot struct {
 	Buffer          int
@@ -93,9 +100,8 @@ func (bot *CliBot) IsRunning() bool {
 func (bot *CliBot) StartChat(c *ishell.Context) {
 	bot.shellCtxt = c
 
-	workflows := bot.listWorflows()
-	choice := c.MultiChoice(workflows, "select a workflow")
-	bot.workflow = workflows[choice]
+	choice := c.MultiChoice(bot.listWorflows, "select a workflow")
+	bot.workflow = bot.listWorflows[choice]
 
 	for {
 		select {

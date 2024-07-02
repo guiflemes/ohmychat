@@ -17,9 +17,10 @@ func main() {
 	}
 
 	config := config.OhMyChatConfig{
-		Worker:    config.Worker{Enabled: true, Number: 1},
-		Api:       config.Api{Enabled: false},
-		Connector: config.Connector{Provider: config.Cli},
+		Worker:       config.Worker{Enabled: true, Number: 1},
+		Api:          config.Api{Enabled: false},
+		Connector:    config.Connector{Provider: config.Cli},
+		ChatDatabase: config.ChatDatabase{Kind: "memory"},
 	}
 
 	app.Run(config)

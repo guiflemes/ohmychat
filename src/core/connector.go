@@ -48,7 +48,7 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	connfn, err := m.getConnector(bot.ChatConnector)
 
 	if err != nil {
-		logger.Logger.Panic("chat connector error",
+		logger.Logger.Fatal("chat connector error",
 			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
@@ -57,11 +57,12 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	conn, err := connfn(bot)
 
 	if err != nil {
-		logger.Logger.Panic("chat connector error",
+		logger.Logger.Fatal("chat connector error",
 			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
 	}
+
 	m.connector = conn
 	return m
 }

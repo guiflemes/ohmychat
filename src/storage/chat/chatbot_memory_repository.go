@@ -22,16 +22,17 @@ func (m *MemoryChatbotRepo) GetChatBot(botName string) *models.ChatBot {
 	return chatbot
 }
 
-func (m *MemoryChatbotRepo) ListChatBots() []*models.ChatBot {
+func (m *MemoryChatbotRepo) ListChatBots() *models.ChatBotCollection {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	bots := make([]*models.ChatBot, 0, len(m.bots))
+
+	collection := models.NewChatBotCollection(len(m.bots))
 
 	for _, bot := range m.bots {
-		bots = append(bots, bot)
+		collection.Add(bot)
 	}
 
-	return bots
+	return collection
 }
 
 func NewMemoryChatbotRepo() *MemoryChatbotRepo {
