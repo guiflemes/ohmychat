@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/abiosoft/ishell"
@@ -28,6 +29,13 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 	})
 
 	go func() {
+		fmt.Println(`
+     ( )
+.-----'-----.
+| ( )   ( ) |  -( welcome to ohmychat !!! type 'chat' to start it 'help' to see all options )
+'-----.-----' 
+ / '+---+' \ 
+ \/--|_|--\/`)
 		shell.Run()
 	}()
 
