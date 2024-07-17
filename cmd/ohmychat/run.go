@@ -15,7 +15,7 @@ import (
 func RunCli() {
 	// use it to simulate up to cli be ready to run on app
 
-	config := config.Connector{Provider: "Cli"}
+	config := config.OhMyChatConfig{}
 	ctx, cancel := context.WithCancel(context.Background())
 
 	sigCh := make(chan os.Signal, 1)
