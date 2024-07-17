@@ -14,8 +14,17 @@ type Bot struct {
 	CliDependencies CliDependencies
 }
 
+// CliDependencies contains the dependencies for the CliBot, including a function to list workflows
+// and a flag to control the initialization of the shell.
+//
+// DisableInitialization is a flag that should be used exclusively during testing to prevent
+// the execution of initialization code and display of messages that are specific to the production
+// environment. When set to true, the CliBot will skip the usual initialization and welcome messages
+// that would normally be shown during standard execution. In production environments, this flag
+// should remain false to ensure that full initialization and welcome messages are displayed as expected.
 type CliDependencies struct {
-	ListWorkflows func() []string
+	ListWorkflows         func() []string
+	DisableInitialization bool
 }
 
 func NewBot(config config.OhMyChatConfig) *Bot {

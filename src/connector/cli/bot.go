@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/abiosoft/ishell"
@@ -10,15 +11,13 @@ import (
 	"oh-my-chat/src/models"
 )
 
-func NewCliBot(botConfig *models.Bot) *CliBot {
+func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
 
 	listWorflows := botConfig.CliDependencies.ListWorkflows
 
-	if listWorflows == nil || len(listWorflows()) == 0 {
+	if len(listWorflows()) == 0 {
 		panic("cli has not workflows")
 	}
-
-	shell := ishell.New()
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
 		if count >= 1 {
@@ -29,13 +28,16 @@ func NewCliBot(botConfig *models.Bot) *CliBot {
 	})
 
 	go func() {
-		fmt.Println(`
+		if !botConfig.CliDependencies.DisableInitialization {
+
+			fmt.Println(`
      ( )
 .-----'-----.
-| ( )   ( ) |  -( welcome to ohmychat !!! type 'chat' to start it 'help' to see all options )
+| ( )   ( ) |  -( welcome to ohmychat !!! type 'chat' to start it or 'help' to see all options )
 '-----.-----' 
  / '+---+' \ 
  \/--|_|--\/`)
+		}
 		shell.Run()
 	}()
 
@@ -82,7 +84,7 @@ type CliBot struct {
 	Buffer          int
 	shutdownChannel chan struct{}
 	receiveCh       chan string
-	shellCtxt       *ishell.Context
+	shellCtx        *ishell.Context
 	multiChoiceCh   chan Message
 	blocked         bool
 	workflow        string
@@ -102,11 +104,11 @@ func newCliBot(listWorflows ListWorflows) *CliBot {
 }
 
 func (bot *CliBot) IsRunning() bool {
-	return bot.shellCtxt != nil
+	return bot.shellCtx != nil
 }
 
 func (bot *CliBot) StartChat(c *ishell.Context) {
-	bot.shellCtxt = c
+	bot.shellCtx = c
 
 	choice := c.MultiChoice(bot.listWorflows, "select a workflow")
 	bot.workflow = bot.listWorflows[choice]
@@ -116,7 +118,7 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 
 		case message, ok := <-bot.multiChoiceCh:
 			if ok {
-				choice := bot.shellCtxt.MultiChoice(message.MultiChoice, "select your choice:")
+				choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
 				bot.receiveCh <- message.MultiChoice[choice]
 				break
 			}
@@ -126,15 +128,16 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 			}
 			bot.blocked = true
 
-			bot.shellCtxt.Print("You: ")
-			input := bot.shellCtxt.ReadLine()
+			bot.shellCtx.Print("You: ")
+			input := bot.shellCtx.ReadLine()
+			input = strings.TrimSpace(input)
 
 			if input == "" {
 				continue
 			}
 
 			if input == "exit" {
-				bot.shellCtxt.Println("Exiting chat mode...")
+				bot.shellCtx.Println("Exiting chat mode...")
 				return
 			}
 			bot.receiveCh <- input
@@ -171,7 +174,7 @@ func (bot *CliBot) GetUpdateChanels() UpdateChannel {
 }
 
 func (bot *CliBot) StopReceivingUpdates() {
-	close(bot.shutdownChannel)
+	bot.shutdownChannel <- struct{}{}
 }
 
 func (bot *CliBot) SendMessage(message Message) {
@@ -186,7 +189,7 @@ func (bot *CliBot) SendMessage(message Message) {
 		return
 	}
 
-	bot.shellCtxt.Println(message.Text)
+	bot.shellCtx.Println(message.Text)
 	if message.UnBlockByAction {
 		bot.blocked = false
 	}

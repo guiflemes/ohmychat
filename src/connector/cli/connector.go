@@ -4,17 +4,24 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/abiosoft/ishell"
+
 	"oh-my-chat/src/connector"
 	"oh-my-chat/src/models"
 	"oh-my-chat/src/utils"
 )
 
+type BotCli interface {
+	GetUpdateChanels() UpdateChannel
+	SendMessage(message Message)
+}
+
 type cliConnector struct {
-	bot *CliBot
+	bot BotCli
 }
 
 func NewCliConnector(bot *models.Bot) (connector.Connector, error) {
-	cliBot := NewCliBot(bot)
+	cliBot := NewCliBot(bot, ishell.New())
 	conn := &cliConnector{bot: cliBot}
 	return conn, nil
 }
@@ -28,7 +35,10 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 		case <-ctx.Done():
 			fmt.Println("sutdown cli connector")
 			return
-		case update := <-updates:
+		case update, ok := <-updates:
+			if !ok {
+				continue
+			}
 			message := models.NewMessage()
 			message.Type = models.MsgTypeUnknown
 			message.Connector = models.Cli
