@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/connector"
+	"oh-my-chat/src/connector/cli"
 	"oh-my-chat/src/connector/telegram"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
@@ -23,6 +24,7 @@ type GetConnectors func() map[models.MessageConnector]NewConnector
 func Connectors() map[models.MessageConnector]NewConnector {
 	return map[models.MessageConnector]NewConnector{
 		models.Telegram: telegram.NewTelegramConnector,
+		models.Cli:      cli.NewCliConnector,
 	}
 }
 
@@ -46,7 +48,7 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	connfn, err := m.getConnector(bot.ChatConnector)
 
 	if err != nil {
-		logger.Logger.Panic("chat connector error",
+		logger.Logger.Fatal("chat connector error",
 			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
@@ -55,11 +57,12 @@ func NewMuitiChannelConnector(bot *models.Bot) *multiChannelConnector {
 	conn, err := connfn(bot)
 
 	if err != nil {
-		logger.Logger.Panic("chat connector error",
+		logger.Logger.Fatal("chat connector error",
 			zap.String("context", "connector"),
 			zap.Error(err),
 			zap.String("connector_name", string(bot.ChatConnector)))
 	}
+
 	m.connector = conn
 	return m
 }

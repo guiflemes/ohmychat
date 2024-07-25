@@ -13,8 +13,6 @@ import (
 	"oh-my-chat/src/models"
 )
 
-var previewLog = logger.Logger.With(zap.String("context", "api_preview"))
-
 type GetHandlerFactory func(model *models.HttpGetModel) *ahttp.HttpGetAction
 
 type PreviewApi struct {
@@ -28,6 +26,7 @@ func NewPreviewApi() *PreviewApi {
 }
 
 func (p *PreviewApi) JsonResponse(w http.ResponseWriter, r *http.Request) {
+	previewLog := logger.Logger.With(zap.String("context", "api_preview"))
 	action := r.URL.Query().Get("action")
 
 	w.Header().Set("content-type", "application/json")

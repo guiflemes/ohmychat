@@ -9,19 +9,16 @@ import (
 
 var Logger *zap.Logger
 
-func init() {
-	Logger = env_logger()
-}
+func InitLog(env string) {
 
-func env_logger() *zap.Logger {
-	env := "development"
-
-	if env == "production" {
-		return productionLogger()
+	switch env {
+	case "production":
+		Logger = productionLogger()
+	case "disable":
+		Logger = zap.NewNop()
+	default:
+		Logger = developmentLogger()
 	}
-
-	return developmentLogger()
-
 }
 
 func developmentLogger() *zap.Logger {
@@ -35,7 +32,6 @@ func developmentLogger() *zap.Logger {
 }
 
 func productionLogger() *zap.Logger {
-
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "timestamp"
 	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder

@@ -9,8 +9,15 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
+
+func TestMain(m *testing.M) {
+	logger.InitLog("disable")
+
+	m.Run()
+}
 
 type FakeAction struct{}
 

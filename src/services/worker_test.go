@@ -12,8 +12,15 @@ import (
 
 	"oh-my-chat/src/config"
 	"oh-my-chat/src/core"
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
+
+func TestMain(m *testing.M) {
+	logger.InitLog("disable")
+
+	m.Run()
+}
 
 type MockStorage struct {
 	data []core.ActionReplyPair

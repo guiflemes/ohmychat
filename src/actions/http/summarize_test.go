@@ -7,8 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"oh-my-chat/src/config"
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/utils"
 )
+
+func TestMain(m *testing.M) {
+	logger.InitLog("disable")
+
+	m.Run()
+}
 
 type testCase struct {
 	desc     string

@@ -10,8 +10,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
+
+func TestMain(m *testing.M) {
+	logger.InitLog("disable")
+
+	m.Run()
+}
 
 func fakeHandlerPreview(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)

@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"log"
+	"fmt"
 	"os"
 )
 
@@ -9,7 +9,16 @@ func GETENV(key string) string {
 	env, isPresent := os.LookupEnv(key)
 
 	if !isPresent {
-		log.Fatalf("%s is not present in environment variables", key)
+		panic(fmt.Sprintf("%s is not present in environment variables", key))
+	}
+	return env
+}
+
+func GetEnvOrDefault(key string, defaultValue string) string {
+	env, isPresent := os.LookupEnv(key)
+
+	if !isPresent {
+		return defaultValue
 	}
 	return env
 }
