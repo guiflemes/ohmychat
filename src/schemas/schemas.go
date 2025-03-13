@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	googlesheet "oh-my-chat/src/actions/google_sheet"
 	"oh-my-chat/src/actions/http"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/models"
@@ -37,16 +38,20 @@ type decodeRawAction func(rawModel map[string]any) (core.Action, error)
 
 var Actions = map[models.ModelType]decodeRawAction{
 	models.TypeHttpGetModel: func(rawModel map[string]any) (core.Action, error) {
-
 		model := &models.HttpGetModel{}
 		if err := parseRawModel(model, rawModel); err != nil {
 			return nil, err
 		}
-
-		fmt.Println(model.JsonResponseConfig.Summarize.MaxInner)
-
 		return http.NewHttpGetAction(model), nil
 
+	},
+
+	models.TypeGoogleSheetModel: func(rawModel map[string]any) (core.Action, error) {
+		model := &models.GoogleSheetModel{}
+		if err := parseRawModel(model, rawModel); err != nil {
+			return nil, err
+		}
+		return googlesheet.NewGoogleSheetAction(model), nil
 	},
 }
 

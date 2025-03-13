@@ -1,0 +1,23 @@
+engine: guided_response
+intents:
+  - name: Let's write on your sheet
+    key: parent
+    options:
+      - content: Write on your Monthly expenses 
+        name: Monthly expenses
+        key: monthly_expenses
+  - name: Monthly expenses 
+    key: monthly_expenses
+    options:
+      - content: Write on march table
+        name: March
+        key: march
+        action:
+          type: google_sheet
+          object:
+            secret_path: some_path
+            write_config: 
+              - collumn_name: supermarket
+                collumn_type: 1 
+              - collumn_name: general
+                collumn_type: 1
