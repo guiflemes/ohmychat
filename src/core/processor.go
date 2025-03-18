@@ -121,3 +121,7 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 
 	engine.HandleMessage(msg, output)
 }
+
+type Action interface {
+	Handle(ctx context.Context, message *models.Message) error
+}

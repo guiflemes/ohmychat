@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -9,10 +8,6 @@ import (
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
-
-type Action interface {
-	Handle(ctx context.Context, message *models.Message) error
-}
 
 type Message struct {
 	id      string
