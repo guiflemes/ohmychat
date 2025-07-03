@@ -103,3 +103,51 @@ func Run(config settings.OhMyChatConfig) {
 	wg.Wait()
 
 }
+
+func RunV2(engine core.EngineV2) {
+	cfg := settings.OhMyChatConfig{
+		Connector: settings.Connector{Provider: settings.Cli},
+	}
+
+	inputMsg := make(chan models.Message, 1)
+	outputMsg := make(chan models.Message, 1)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	bot := models.NewBot(cfg)
+
+	processor := core.NewProcessorv2(engine)
+	connector := core.NewMuitiChannelConnector(bot)
+
+	sign := make(chan os.Signal, 1)
+	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
+
+	go func() {
+		sig := <-sign
+		logger.Logger.Info("Received signal, stopping", zap.String("signal", sig.String()))
+		cancel()
+	}()
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		processor.Process(ctx, inputMsg, outputMsg)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		connector.Request(ctx, inputMsg)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		connector.Response(ctx, outputMsg)
+	}()
+
+	wg.Wait()
+
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
@@ -263,7 +264,7 @@ func (e *guidedResponseEngine) Name() string {
 	return "guided"
 }
 
-func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<- models.Message) {
+func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input models.Message, output chan<- models.Message) {
 
 	if !e.setup {
 		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))

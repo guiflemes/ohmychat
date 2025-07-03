@@ -48,6 +48,12 @@ func NewMemoryChatbotRepo() *MemoryChatbotRepo {
 				Engine:     "guided",
 				WorkflowID: "pokemon",
 			},
+
+			"cli_test2": {
+				BotName:    "cli_test2",
+				Engine:     "rule",
+				WorkflowID: "forfun",
+			},
 		},
 		lock: &sync.Mutex{},
 	}

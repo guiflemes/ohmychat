@@ -30,7 +30,7 @@ type CliDependencies struct {
 func NewBot(config config.OhMyChatConfig) *Bot {
 	return &Bot{
 		ChatConnector:  MessageConnector(config.Connector.Provider),
-		TelegramConfig: TelegramConfig{Token: settings.GETENV("TELEGRAM_TOKEN")},
+		TelegramConfig: TelegramConfig{Token: settings.GetEnvOrDefault("TELEGRAM_TOKEN", "")},
 	}
 }
 

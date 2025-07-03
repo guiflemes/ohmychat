@@ -14,7 +14,7 @@ type FakeEgine1 struct {
 }
 
 func (f *FakeEgine1) Name() string { return f.engineName }
-func (f *FakeEgine1) HandleMessage(input models.Message, output chan<- models.Message) {
+func (f *FakeEgine1) HandleMessage(ctx context.Context, input models.Message, output chan<- models.Message) {
 	response := &input
 	response.Output = "message processed"
 	output <- *response

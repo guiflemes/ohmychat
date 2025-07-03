@@ -23,7 +23,7 @@ type ActionStorageService interface {
 
 type Engine interface {
 	Name() string
-	HandleMessage(models.Message, chan<- models.Message)
+	HandleMessage(context.Context, models.Message, chan<- models.Message)
 	GetActionStorageService() ActionStorageService
 	Config(channelName string) error
 	IsReady() bool
@@ -68,7 +68,7 @@ func (m *processor) Process(
 				m.chatBot = m.chatBotGetter.GetChatBot(message.BotName)
 			}
 
-			m.handleWorkflow(message, outputMsg)
+			m.handleWorkflow(ctx, message, outputMsg)
 
 		case <-ctx.Done():
 			return
@@ -77,7 +77,7 @@ func (m *processor) Process(
 	}
 }
 
-func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Message) {
+func (m *processor) handleWorkflow(ctx context.Context, msg models.Message, output chan<- models.Message) {
 	if m.chatBot == nil {
 		logger.Logger.Error(
 			"Chatbot not found",
@@ -119,9 +119,44 @@ func (m *processor) handleWorkflow(msg models.Message, output chan<- models.Mess
 
 	logger.Logger.Info("handling message", zap.String("message_id", msg.BotID))
 
-	engine.HandleMessage(msg, output)
+	engine.HandleMessage(ctx, msg, output)
 }
 
 type Action interface {
 	Handle(ctx context.Context, message *models.Message) error
+}
+
+type EngineV2 interface {
+	HandleMessage(context.Context, *models.Message, chan<- models.Message)
+}
+
+type processorv2 struct {
+	chatBot *models.ChatBot
+	engine  EngineV2
+}
+
+func NewProcessorv2(engine EngineV2) *processorv2 {
+	return &processorv2{
+		engine: engine,
+	}
+}
+
+func (m *processorv2) Process(
+	ctx context.Context,
+	inputMsg <-chan models.Message,
+	outputMsg chan<- models.Message,
+) {
+	for {
+		select {
+		case message, ok := <-inputMsg:
+			if !ok {
+				return
+			}
+			m.engine.HandleMessage(ctx, &message, outputMsg)
+
+		case <-ctx.Done():
+			return
+		}
+
+	}
 }

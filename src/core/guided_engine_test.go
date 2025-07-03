@@ -427,7 +427,7 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 				g.engine.setup = false
 			}
 
-			go g.engine.HandleMessage(c.input, output)
+			go g.engine.HandleMessage(context.Background(), c.input, output)
 
 			result := <-output
 

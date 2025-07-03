@@ -15,8 +15,8 @@ func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
 
 	listWorflows := botConfig.CliDependencies.ListWorkflows
 
-	if len(listWorflows()) == 0 {
-		panic("cli has not workflows")
+	if listWorflows == nil {
+		listWorflows = func() []string { return []string{"new_chat"} }
 	}
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
@@ -86,9 +86,11 @@ type CliBot struct {
 	receiveCh       chan string
 	shellCtx        *ishell.Context
 	multiChoiceCh   chan Message
+	outputCh        chan Message
 	blocked         bool
 	workflow        string
 	listWorflows    ListWorflows
+	waitingResponse bool
 }
 
 func newCliBot(listWorflows ListWorflows) *CliBot {
@@ -98,8 +100,10 @@ func newCliBot(listWorflows ListWorflows) *CliBot {
 		shutdownChannel: make(chan struct{}, 1),
 		receiveCh:       make(chan string, 10),
 		multiChoiceCh:   make(chan Message, 1),
+		outputCh:        make(chan Message, 1),
 		blocked:         false,
 		listWorflows:    listWorflows,
+		waitingResponse: false,
 	}
 }
 
@@ -114,33 +118,46 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 	bot.workflow = bot.listWorflows[choice]
 
 	for {
-		select {
-
-		case message, ok := <-bot.multiChoiceCh:
-			if ok {
-				choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
-				bot.receiveCh <- message.MultiChoice[choice]
-				break
-			}
-		default:
-			if bot.blocked {
-				continue
-			}
-			bot.blocked = true
-
-			bot.shellCtx.Print("You: ")
+		if !bot.waitingResponse {
+			bot.shellCtx.Print("YOU: ")
 			input := bot.shellCtx.ReadLine()
 			input = strings.TrimSpace(input)
-
-			if input == "" {
-				continue
-			}
 
 			if input == "exit" {
 				bot.shellCtx.Println("Exiting chat mode...")
 				return
 			}
+
 			bot.receiveCh <- input
+			bot.waitingResponse = true
+		}
+
+		select {
+		case message := <-bot.multiChoiceCh:
+			choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
+			bot.receiveCh <- message.MultiChoice[choice]
+		case message := <-bot.outputCh:
+			bot.shellCtx.Print("BOT: ")
+			bot.shellCtx.Println(message.Text)
+			bot.waitingResponse = false
+			// default:
+			// 	// if bot.blocked {
+			// 	// 	time.Sleep(100 * time.Millisecond)
+			// 	// 	continue
+			// 	// }
+			// 	if bot.waitingResponse {
+			// 		continue
+			// 	}
+
+			// 	bot.shellCtx.Print("YOU: ")
+			// 	input := bot.shellCtx.ReadLine()
+			// 	input = strings.TrimSpace(input)
+
+			// 	if input == "exit" {
+			// 		bot.shellCtx.Println("Exiting chat mode...")
+			// 		return
+			// 	}
+			// 	bot.receiveCh <- input
 
 		}
 	}
@@ -189,7 +206,8 @@ func (bot *CliBot) SendMessage(message Message) {
 		return
 	}
 
-	bot.shellCtx.Println(message.Text)
+	bot.outputCh <- message
+
 	if message.UnBlockByAction {
 		bot.blocked = false
 	}
