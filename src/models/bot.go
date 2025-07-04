@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"oh-my-chat/settings"
 	"oh-my-chat/src/config"
 )
@@ -12,6 +13,8 @@ type Bot struct {
 	TelegramConfig  TelegramConfig
 	IsReady         string
 	CliDependencies CliDependencies
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 // CliDependencies contains the dependencies for the CliBot, including a function to list workflows
@@ -28,10 +31,21 @@ type CliDependencies struct {
 }
 
 func NewBot(config config.OhMyChatConfig) *Bot {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Bot{
 		ChatConnector:  MessageConnector(config.Connector.Provider),
 		TelegramConfig: TelegramConfig{Token: settings.GetEnvOrDefault("TELEGRAM_TOKEN", "")},
+		ctx:            ctx,
+		cancel:         cancel,
 	}
+}
+
+func (b *Bot) Ctx() context.Context {
+	return b.ctx
+}
+
+func (b *Bot) Shutdown() {
+	b.cancel()
 }
 
 type TelegramConfig struct {

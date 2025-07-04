@@ -112,9 +112,8 @@ func RunV2(engine core.EngineV2) {
 	inputMsg := make(chan models.Message, 1)
 	outputMsg := make(chan models.Message, 1)
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	bot := models.NewBot(cfg)
+	ctx := bot.Ctx()
 
 	processor := core.NewProcessorv2(engine)
 	connector := core.NewMuitiChannelConnector(bot)
@@ -122,10 +121,11 @@ func RunV2(engine core.EngineV2) {
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
 
+	//TODO  when cli connector is running, the cancelation never comes here, find a way out to fix it
 	go func() {
 		sig := <-sign
 		logger.Logger.Info("Received signal, stopping", zap.String("signal", sig.String()))
-		cancel()
+		bot.Shutdown()
 	}()
 
 	var wg sync.WaitGroup

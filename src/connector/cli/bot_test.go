@@ -84,12 +84,10 @@ func TestBotSendMessage(t *testing.T) {
 	t.Run("Text message", func(t *testing.T) {
 		cliBot := newCliBot(ListWorflows{})
 		mockAction := &MockActions{}
-		cliBot.blocked = true
 		mockAction.Mock.On("Println", "my message").Return()
 		cliBot.shellCtx = &ishell.Context{Actions: mockAction}
 		cliBot.SendMessage(Message{Text: "my message", UnBlockByAction: true})
 		mockAction.AssertCalled(t, "Println", "my message")
-		assert.False(cliBot.blocked)
 
 	})
 
@@ -123,7 +121,6 @@ func TestStartChat(t *testing.T) {
 	t.Run("MultiChoice", func(t *testing.T) {
 
 		cliBot := newCliBot(ListWorflows{"choice"})
-		cliBot.blocked = true
 		mockAction := &MockActions{readLine: "readline"}
 
 		go func() {

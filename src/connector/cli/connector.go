@@ -48,6 +48,7 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 			message.ChannelID = "CLI"
 			message.BotID = "CLI"
 			message.BotName = update.Message.BotName
+			message.User.ID = "cli_id"
 
 			input <- message
 

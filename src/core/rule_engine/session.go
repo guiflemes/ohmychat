@@ -23,7 +23,11 @@ func (r *InMemorySessionRepo) GetOrCreate(_ context.Context, id string) *Session
 	if s, ok := r.store[id]; ok {
 		return s
 	}
-	s := &Session{UserID: id, State: IdleState{}, Memory: map[string]string{}}
+	s := &Session{UserID: id, State: IdleState{}, Memory: make(map[string]any)}
 	r.store[id] = s
 	return s
+}
+
+func (r *InMemorySessionRepo) Save(_ context.Context, session *Session) error {
+	return nil
 }

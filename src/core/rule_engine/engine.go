@@ -15,7 +15,7 @@ type Rule struct {
 type Session struct {
 	UserID string
 	State  SessionState
-	Memory map[string]string
+	Memory map[string]any
 }
 
 type ActionInput struct {
@@ -30,6 +30,7 @@ type RuleEngineOption func(engine *RuleEngine)
 
 type SessionRepo interface {
 	GetOrCreate(ctx context.Context, sessionID string) *Session
+	Save(ctx context.Context, session *Session) error
 }
 
 func WithMatcher(m MatcherFunc) RuleEngineOption {
@@ -74,7 +75,7 @@ func (e *RuleEngine) RegisterRule(rule ...Rule) {
 }
 
 func (e *RuleEngine) HandleMessage(ctx context.Context, msg *models.Message, msgCh chan<- models.Message) {
-	session := e.sessionRepo.GetOrCreate(ctx, msg.ID)
+	session := e.sessionRepo.GetOrCreate(ctx, msg.User.ID)
 	actionInput := ActionInput{Session: session, Message: msg, Output: msgCh}
 
 	switch state := session.State.(type) {
@@ -97,7 +98,6 @@ func (e *RuleEngine) handleIdleState(ctx context.Context, input ActionInput) {
 		return
 	}
 
-	// TODO manage session memory
 	input.Session.State = rule.NextState
 	rule.Action(ctx, input)
 
@@ -105,12 +105,10 @@ func (e *RuleEngine) handleIdleState(ctx context.Context, input ActionInput) {
 
 func (e *RuleEngine) handleWaitingInputState(ctx context.Context, input ActionInput, state WaitingInputState) {
 	if strings.TrimSpace(input.Message.Input) == "" {
-		input.Message.Output = "Por favor, responda ao que foi solicitado"
+		input.Message.Output = state.PromptEmptyMessage
 		input.Output <- *input.Message
 		return
 	}
-
-	input.Session.State = IdleState{}
 	state.Action(ctx, input)
 }
 
@@ -142,26 +140,6 @@ func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
 	}
 	return Rule{}, false
 }
-
-// func (e *RuleEngine) HandleMessage(msg models.Message, msgCh chan<- models.Message) {
-// 	response := &msg
-// 	actionPair := e.handleMsg(response, msgCh)
-// 	e.checkOption = response.ResponseType == models.OptionResponse
-
-// 	msgCh <- *response
-
-// 	if actionPair != nil {
-// 		e.actionSvc.Enqueue(*actionPair)
-// 	}
-
-// }
-
-// func (e *RuleEngine) handleMsg(msg *models.Message, msgCh chan<- models.Message) *core.ActionReplyPair {
-// 	if e.checkOption {
-// 		return e.handleOption(msg, msgCh)
-// 	}
-// 	return e.handleIntent(msg, msgCh)
-// }
 
 // func (e *RuleEngine) handleIntent(response *models.Message, msgCh chan<- models.Message) *core.ActionReplyPair {
 // 	intent, ok := e.intents.GetIntent(response.Input)

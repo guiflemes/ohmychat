@@ -9,15 +9,17 @@ type IdleState struct{}
 func (IdleState) IsState() {}
 
 type WaitingInputState struct {
-	Prompt string
-	Action ActionFunc
+	PromptEmptyMessage string
+	Action             ActionFunc
 }
 
 func (WaitingInputState) IsState() {}
 
 type WaitingChoiceState struct {
 	Prompt  string
-	Choices map[string]ActionFunc
+	Choices Choices
 }
 
 func (WaitingChoiceState) IsState() {}
+
+type Choices map[string]ActionFunc

@@ -11,9 +11,9 @@ import (
 	"oh-my-chat/src/models"
 )
 
-func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
+func NewCliBot(bot *models.Bot, shell *ishell.Shell) *CliBot {
 
-	listWorflows := botConfig.CliDependencies.ListWorkflows
+	listWorflows := bot.CliDependencies.ListWorkflows
 
 	if listWorflows == nil {
 		listWorflows = func() []string { return []string{"new_chat"} }
@@ -23,12 +23,12 @@ func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
 		if count >= 1 {
 			c.Println("Interrupted")
 			shell.Stop()
+			bot.Shutdown()
 		}
-		c.Println("Input Ctrl-c once more to exit")
 	})
 
 	go func() {
-		if !botConfig.CliDependencies.DisableInitialization {
+		if !bot.CliDependencies.DisableInitialization {
 
 			fmt.Println(`
      ( )
@@ -87,7 +87,6 @@ type CliBot struct {
 	shellCtx        *ishell.Context
 	multiChoiceCh   chan Message
 	outputCh        chan Message
-	blocked         bool
 	workflow        string
 	listWorflows    ListWorflows
 	waitingResponse bool
@@ -101,7 +100,6 @@ func newCliBot(listWorflows ListWorflows) *CliBot {
 		receiveCh:       make(chan string, 10),
 		multiChoiceCh:   make(chan Message, 1),
 		outputCh:        make(chan Message, 1),
-		blocked:         false,
 		listWorflows:    listWorflows,
 		waitingResponse: false,
 	}
@@ -125,6 +123,7 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 
 			if input == "exit" {
 				bot.shellCtx.Println("Exiting chat mode...")
+				bot.shellCtx.Println("Input Ctrl-c to exit")
 				return
 			}
 
@@ -140,25 +139,6 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 			bot.shellCtx.Print("BOT: ")
 			bot.shellCtx.Println(message.Text)
 			bot.waitingResponse = false
-			// default:
-			// 	// if bot.blocked {
-			// 	// 	time.Sleep(100 * time.Millisecond)
-			// 	// 	continue
-			// 	// }
-			// 	if bot.waitingResponse {
-			// 		continue
-			// 	}
-
-			// 	bot.shellCtx.Print("YOU: ")
-			// 	input := bot.shellCtx.ReadLine()
-			// 	input = strings.TrimSpace(input)
-
-			// 	if input == "exit" {
-			// 		bot.shellCtx.Println("Exiting chat mode...")
-			// 		return
-			// 	}
-			// 	bot.receiveCh <- input
-
 		}
 	}
 }
@@ -207,9 +187,5 @@ func (bot *CliBot) SendMessage(message Message) {
 	}
 
 	bot.outputCh <- message
-
-	if message.UnBlockByAction {
-		bot.blocked = false
-	}
 
 }
