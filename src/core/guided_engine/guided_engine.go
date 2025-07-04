@@ -1,4 +1,4 @@
-package core
+package guidedengine
 
 import (
 	"fmt"
@@ -9,6 +9,20 @@ import (
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/models"
 )
+
+type Action interface {
+	Handle(ctx context.Context, message *models.Message) error
+}
+
+type ActionReplyPair struct {
+	ReplyTo chan<- models.Message
+	Action  Action
+	Input   models.Message
+}
+
+type ActionStorageService interface {
+	Enqueue(actioonPair ActionReplyPair)
+}
 
 type Message struct {
 	id      string
@@ -185,6 +199,7 @@ type GuidedResponseRepo interface {
 	GetMessageTree(workflowID string) (*MessageTree, error)
 }
 
+// guidedResponseEngine is currently not operational and pending implementation.
 type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
@@ -195,10 +210,12 @@ type guidedResponseEngine struct {
 	repo         GuidedResponseRepo
 }
 
+// Deprecated: guidedResponseEngine is currently not operational and pending implementation.
 func NewGuidedResponseEngine(
 	actionQueue ActionStorageService,
 	repo GuidedResponseRepo,
 ) *guidedResponseEngine {
+
 	return &guidedResponseEngine{
 		actionQueue: actionQueue,
 		chatRouting: Fallback,

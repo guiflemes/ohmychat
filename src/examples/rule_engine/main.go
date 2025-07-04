@@ -64,7 +64,5 @@ func main() {
 			},
 		},
 	)
-
-	app.RunV2(engine)
-
+	app.Run(engine)
 }

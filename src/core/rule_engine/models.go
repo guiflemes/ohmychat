@@ -1,7 +1,6 @@
 package rule_engine
 
 import (
-	"oh-my-chat/src/core"
 	"strings"
 )
 
@@ -10,20 +9,18 @@ type Action struct {
 }
 
 type Option struct {
-	Content  string       `yaml:"content"`
-	Name     string       `yaml:"name"`
-	Key      string       `yaml:"key"`
-	Action   *core.Action `yaml:"action,omitempty"`
-	Response string       `yaml:"response"`
+	Content  string `yaml:"content"`
+	Name     string `yaml:"name"`
+	Key      string `yaml:"key"`
+	Response string `yaml:"response"`
 }
 
 type Intent struct {
-	Name     string       `yaml:"name"`
-	Key      string       `yaml:"key"`
-	Action   *core.Action `yaml:"action,omitempty"`
-	Patterns []string     `yaml:"patterns"`
-	Options  Options      `yaml:"options"`
-	Response string       `yaml:"response"`
+	Name     string   `yaml:"name"`
+	Key      string   `yaml:"key"`
+	Patterns []string `yaml:"patterns"`
+	Options  Options  `yaml:"options"`
+	Response string   `yaml:"response"`
 }
 
 type Options struct {

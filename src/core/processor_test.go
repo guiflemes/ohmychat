@@ -13,15 +13,12 @@ type FakeEgine1 struct {
 	engineName string
 }
 
-func (f *FakeEgine1) Name() string { return f.engineName }
-func (f *FakeEgine1) HandleMessage(ctx context.Context, input models.Message, output chan<- models.Message) {
-	response := &input
-	response.Output = "message processed"
-	output <- *response
+func (f *FakeEgine1) HandleMessage(ctx context.Context, input *models.Message, output chan<- models.Message) {
+	input.Output = "message processed"
+	output <- *input
 }
-func (f *FakeEgine1) GetActionStorageService() ActionStorageService { return nil }
-func (f *FakeEgine1) Config(channelName string) error               { return nil }
-func (f *FakeEgine1) IsReady() bool                                 { return true }
+func (f *FakeEgine1) Config(channelName string) error { return nil }
+func (f *FakeEgine1) IsReady() bool                   { return true }
 
 type FakeChatBotGetter struct{}
 
@@ -64,9 +61,8 @@ func TestProcess(t *testing.T) {
 
 			inputMsg := make(chan models.Message, 1)
 			outputMsg := make(chan models.Message, 1)
-			chatBotRepo := &FakeChatBotGetter{}
 			engine := &FakeEgine1{engineName: scenario.engineName}
-			processor := NewProcessor(chatBotRepo, []Engine{engine})
+			processor := NewProcessor(engine)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
