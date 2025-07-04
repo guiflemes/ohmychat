@@ -7,17 +7,17 @@ import (
 	"golang.org/x/net/context"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 type Action interface {
-	Handle(ctx context.Context, message *models.Message) error
+	Handle(ctx context.Context, message *message.Message) error
 }
 
 type ActionReplyPair struct {
-	ReplyTo chan<- models.Message
+	ReplyTo chan<- message.Message
 	Action  Action
-	Input   models.Message
+	Input   message.Message
 }
 
 type ActionStorageService interface {
@@ -281,7 +281,7 @@ func (e *guidedResponseEngine) Name() string {
 	return "guided"
 }
 
-func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input models.Message, output chan<- models.Message) {
+func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input message.Message, output chan<- message.Message) {
 
 	if !e.setup {
 		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))
@@ -299,17 +299,17 @@ func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input models.M
 		storageAction.Enqueue(actionPair)
 	}
 
-	options := make([]models.Option, 0)
+	options := make([]message.Option, 0)
 	e.node.TransverseInChildren(func(child *MessageNode) {
 		options = append(
 			options,
-			models.Option{ID: child.Message().ID(), Name: child.Message().name},
+			message.Option{ID: child.Message().ID(), Name: child.Message().name},
 		)
 	})
 
 	response := &input
 	response.Output = e.node.Message().Content
 	response.Options = options
-	response.ResponseType = models.OptionResponse
+	response.ResponseType = message.OptionResponse
 	output <- *response
 }

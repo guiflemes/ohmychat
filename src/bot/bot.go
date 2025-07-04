@@ -1,15 +1,16 @@
-package models
+package bot
 
 import (
 	"context"
 	"oh-my-chat/settings"
 	"oh-my-chat/src/config"
+	"oh-my-chat/src/message"
 )
 
 //TODO move Bot to config
 
 type Bot struct {
-	ChatConnector   MessageConnector
+	ChatConnector   message.MessageConnector
 	TelegramConfig  TelegramConfig
 	IsReady         string
 	CliDependencies CliDependencies
@@ -33,7 +34,7 @@ type CliDependencies struct {
 func NewBot(config config.OhMyChatConfig) *Bot {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Bot{
-		ChatConnector:  MessageConnector(config.Connector.Provider),
+		ChatConnector:  message.MessageConnector(config.Connector.Provider),
 		TelegramConfig: TelegramConfig{Token: settings.GetEnvOrDefault("TELEGRAM_TOKEN", "")},
 		ctx:            ctx,
 		cancel:         cancel,

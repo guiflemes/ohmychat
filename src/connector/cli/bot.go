@@ -7,11 +7,11 @@ import (
 
 	"github.com/abiosoft/ishell"
 
+	"oh-my-chat/src/bot"
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
 )
 
-func NewCliBot(bot *models.Bot, shell *ishell.Shell) *CliBot {
+func NewCliBot(bot *bot.Bot, shell *ishell.Shell) *CliBot {
 
 	listWorflows := bot.CliDependencies.ListWorkflows
 

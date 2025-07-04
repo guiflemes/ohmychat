@@ -6,8 +6,9 @@ import (
 
 	"github.com/abiosoft/ishell"
 
+	"oh-my-chat/src/bot"
 	"oh-my-chat/src/connector"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 	"oh-my-chat/src/utils"
 )
 
@@ -20,13 +21,13 @@ type cliConnector struct {
 	bot BotCli
 }
 
-func NewCliConnector(bot *models.Bot) (connector.Connector, error) {
+func NewCliConnector(bot *bot.Bot) (connector.Connector, error) {
 	cliBot := NewCliBot(bot, ishell.New())
 	conn := &cliConnector{bot: cliBot}
 	return conn, nil
 }
 
-func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Message) {
+func (cli *cliConnector) Acquire(ctx context.Context, input chan<- message.Message) {
 
 	updates := cli.bot.GetUpdateChanels()
 
@@ -39,18 +40,18 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 			if !ok {
 				continue
 			}
-			message := models.NewMessage()
-			message.Type = models.MsgTypeUnknown
-			message.Connector = models.Cli
-			message.ConnectorID = "CLI"
-			message.Input = update.Message.Text
-			message.Service = models.MsgServiceChat
-			message.ChannelID = "CLI"
-			message.BotID = "CLI"
-			message.BotName = update.Message.BotName
-			message.User.ID = "cli_id"
+			msg := message.NewMessage()
+			msg.Type = message.MsgTypeUnknown
+			msg.Connector = message.Cli
+			msg.ConnectorID = "CLI"
+			msg.Input = update.Message.Text
+			msg.Service = message.MsgServiceChat
+			msg.ChannelID = "CLI"
+			msg.BotID = "CLI"
+			msg.BotName = update.Message.BotName
+			msg.User.ID = "cli_id"
 
-			input <- message
+			input <- msg
 
 		default:
 		}
@@ -58,13 +59,13 @@ func (cli *cliConnector) Acquire(ctx context.Context, input chan<- models.Messag
 
 }
 
-func (cli *cliConnector) Dispatch(message models.Message) {
-	resposeMsg := NewMessage(message.Output)
-	resposeMsg.UnBlockByAction = message.ActionDone
+func (cli *cliConnector) Dispatch(msg message.Message) {
+	resposeMsg := NewMessage(msg.Output)
+	resposeMsg.UnBlockByAction = msg.ActionDone
 
-	switch message.ResponseType {
-	case models.OptionResponse:
-		options := utils.Map(message.Options, func(o models.Option) string {
+	switch msg.ResponseType {
+	case message.OptionResponse:
+		options := utils.Map(msg.Options, func(o message.Option) string {
 			return o.ID
 		})
 		resposeMsg.MultiChoice = options

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 func TestMain(m *testing.M) {
@@ -57,7 +57,7 @@ func TestAcquire(t *testing.T) {
 			}
 		}()
 
-		input := make(chan models.Message, 1)
+		input := make(chan message.Message, 1)
 
 		go func() {
 			for {
@@ -78,7 +78,7 @@ func TestAcquire(t *testing.T) {
 		conn := &cliConnector{&MockBot{updates: 5}}
 		ctx, cancel := context.WithCancel(context.Background())
 
-		input := make(chan models.Message, 1)
+		input := make(chan message.Message, 1)
 		go func() {
 			var receveid int8
 			for msg := range input {
@@ -101,8 +101,8 @@ func TestAcquire(t *testing.T) {
 func TestSendMessage(t *testing.T) {
 
 	t.Run("TextResponse", func(t *testing.T) {
-		msg := models.NewMessage()
-		msg.ResponseType = models.TextResponse
+		msg := message.NewMessage()
+		msg.ResponseType = message.TextResponse
 		msg.Output = "My message"
 		mockBot := &MockBot{}
 		mockBot.Mock.On("SendMessage", mock.MatchedBy(func(message Message) bool {
@@ -117,9 +117,9 @@ func TestSendMessage(t *testing.T) {
 	})
 
 	t.Run("OptionResponse", func(t *testing.T) {
-		msg := models.NewMessage()
-		msg.ResponseType = models.OptionResponse
-		msg.Options = []models.Option{{ID: "1", Name: "Name"}}
+		msg := message.NewMessage()
+		msg.ResponseType = message.OptionResponse
+		msg.Options = []message.Option{{ID: "1", Name: "Name"}}
 
 		mockBot := &MockBot{}
 

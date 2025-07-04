@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"oh-my-chat/src/app"
+	app "oh-my-chat/src"
 	"oh-my-chat/src/core/rule_engine"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 	"regexp"
 )
 
@@ -46,8 +46,8 @@ func main() {
 		rule_engine.Rule{
 			Prompts: []string{"quero um cao", "cachorro", "dog"},
 			Action: func(ctx context.Context, input rule_engine.ActionInput) {
-				input.Message.ResponseType = models.OptionResponse
-				input.Message.Options = []models.Option{{ID: "beagle", Name: "beagle"}, {ID: "pinscher", Name: "pinscher"}}
+				input.Message.ResponseType = message.OptionResponse
+				input.Message.Options = []message.Option{{ID: "beagle", Name: "beagle"}, {ID: "pinscher", Name: "pinscher"}}
 				input.Output <- *input.Message
 			},
 			NextState: rule_engine.WaitingChoiceState{

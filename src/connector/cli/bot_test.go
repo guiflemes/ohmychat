@@ -1,20 +1,19 @@
 package cli
 
 import (
+	"oh-my-chat/src/bot"
 	"testing"
 
 	"github.com/abiosoft/ishell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"oh-my-chat/src/models"
 )
 
 func TestNewCliBot(t *testing.T) {
 
 	t.Run("panic on workflow are empty", func(t *testing.T) {
 		assert.Panics(t, func() {
-			NewCliBot(&models.Bot{CliDependencies: models.CliDependencies{
+			NewCliBot(&bot.Bot{CliDependencies: bot.CliDependencies{
 				ListWorkflows: func() []string { return []string{} },
 			}}, ishell.New())
 		})
@@ -22,7 +21,7 @@ func TestNewCliBot(t *testing.T) {
 
 	t.Run("new bot", func(t *testing.T) {
 		shell := ishell.New()
-		newBot := NewCliBot(&models.Bot{CliDependencies: models.CliDependencies{
+		newBot := NewCliBot(&bot.Bot{CliDependencies: bot.CliDependencies{
 			DisableInitialization: true,
 			ListWorkflows:         func() []string { return []string{"choice"} },
 		}}, shell)

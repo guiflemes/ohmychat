@@ -2,7 +2,7 @@ package rule_engine
 
 import (
 	"context"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 	"strings"
 )
 
@@ -20,8 +20,8 @@ type Session struct {
 
 type ActionInput struct {
 	Session *Session
-	Message *models.Message
-	Output  chan<- models.Message
+	Message *message.Message
+	Output  chan<- message.Message
 }
 
 type ActionFunc func(ctx context.Context, input ActionInput)
@@ -74,7 +74,7 @@ func (e *RuleEngine) RegisterRule(rule ...Rule) {
 	e.rules = append(e.rules, rule...)
 }
 
-func (e *RuleEngine) HandleMessage(ctx context.Context, msg *models.Message, msgCh chan<- models.Message) {
+func (e *RuleEngine) HandleMessage(ctx context.Context, msg *message.Message, msgCh chan<- message.Message) {
 	session := e.sessionRepo.GetOrCreate(ctx, msg.User.ID)
 	actionInput := ActionInput{Session: session, Message: msg, Output: msgCh}
 
@@ -141,7 +141,7 @@ func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
 	return Rule{}, false
 }
 
-// func (e *RuleEngine) handleIntent(response *models.Message, msgCh chan<- models.Message) *core.ActionReplyPair {
+// func (e *RuleEngine) handleIntent(response *message.Message, msgCh chan<- message.Message) *core.ActionReplyPair {
 // 	intent, ok := e.intents.GetIntent(response.Input)
 
 // 	if !ok {
@@ -175,7 +175,7 @@ func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
 
 // }
 
-// func (e *RuleEngine) handleOption(msg *models.Message, msgCh chan<- models.Message) *core.ActionReplyPair {
+// func (e *RuleEngine) handleOption(msg *message.Message, msgCh chan<- message.Message) *core.ActionReplyPair {
 // 	if opt, found := e.cachedOptions.GetOption(msg.Input); found {
 // 		if opt.Action != nil {
 // 			msg.Output = core.MessageActionOngoing

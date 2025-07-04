@@ -3,15 +3,16 @@ package core
 import (
 	"context"
 
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/bot"
+	"oh-my-chat/src/message"
 )
 
 type Engine interface {
-	HandleMessage(context.Context, *models.Message, chan<- models.Message)
+	HandleMessage(context.Context, *message.Message, chan<- message.Message)
 }
 
 type processor struct {
-	chatBot *models.ChatBot
+	chatBot *bot.ChatBot
 	engine  Engine
 }
 
@@ -23,8 +24,8 @@ func NewProcessor(engine Engine) *processor {
 
 func (m *processor) Process(
 	ctx context.Context,
-	inputMsg <-chan models.Message,
-	outputMsg chan<- models.Message,
+	inputMsg <-chan message.Message,
+	outputMsg chan<- message.Message,
 ) {
 	for {
 		select {
