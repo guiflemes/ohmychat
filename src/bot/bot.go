@@ -4,13 +4,13 @@ import (
 	"context"
 	"oh-my-chat/settings"
 	"oh-my-chat/src/config"
+	"oh-my-chat/src/connector"
 	"oh-my-chat/src/message"
 )
 
-//TODO move Bot to config
-
 type Bot struct {
 	ChatConnector   message.MessageConnector
+	Connector       connector.Connector
 	TelegramConfig  TelegramConfig
 	IsReady         string
 	CliDependencies CliDependencies
@@ -51,35 +51,4 @@ func (b *Bot) Shutdown() {
 
 type TelegramConfig struct {
 	Token string
-}
-
-type ChatBot struct {
-	BotName    string
-	Engine     string
-	WorkflowID string
-}
-
-type ChatBotCollection struct {
-	bots  []*ChatBot
-	names []string
-}
-
-func NewChatBotCollection(capacity int) *ChatBotCollection {
-	return &ChatBotCollection{
-		bots:  make([]*ChatBot, 0, capacity),
-		names: make([]string, 0),
-	}
-}
-
-func (c *ChatBotCollection) Add(bot *ChatBot) {
-	c.bots = append(c.bots, bot)
-	c.names = append(c.names, bot.BotName)
-}
-
-func (c *ChatBotCollection) Names() []string {
-	return c.names
-}
-
-func (c *ChatBotCollection) Items() []*ChatBot {
-	return c.bots
 }

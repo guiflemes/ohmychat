@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 
-	"oh-my-chat/src/bot"
 	"oh-my-chat/src/message"
 )
 
@@ -12,8 +11,7 @@ type Engine interface {
 }
 
 type processor struct {
-	chatBot *bot.ChatBot
-	engine  Engine
+	engine Engine
 }
 
 func NewProcessor(engine Engine) *processor {

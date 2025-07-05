@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"oh-my-chat/src/bot"
 	"oh-my-chat/src/message"
 )
 
@@ -22,17 +21,6 @@ func (f *FakeEgine1) Config(channelName string) error { return nil }
 func (f *FakeEgine1) IsReady() bool                   { return true }
 
 type FakeChatBotGetter struct{}
-
-func (f *FakeChatBotGetter) GetChatBot(botName string) *bot.ChatBot {
-	if botName != "bot_test" {
-		return nil
-	}
-	return &bot.ChatBot{
-		BotName:    "bot_test",
-		Engine:     "engine_test",
-		WorkflowID: "workflow_test",
-	}
-}
 
 type Status int
 
