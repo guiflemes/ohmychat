@@ -1,12 +1,12 @@
 package connector
 
 import (
-	"context"
+	"oh-my-chat/src/context"
 
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 type Connector interface {
-	Acquire(ctx context.Context, input chan<- models.Message)
-	Dispatch(message models.Message)
+	Acquire(ctx *context.ChatContext, input chan<- message.Message)
+	Dispatch(message message.Message)
 }

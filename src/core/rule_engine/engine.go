@@ -1,0 +1,144 @@
+package rule_engine
+
+import (
+	"context"
+	"oh-my-chat/src/message"
+	"strings"
+)
+
+type Rule struct {
+	Prompts   []string
+	Action    ActionFunc
+	NextState SessionState
+}
+
+type Session struct {
+	UserID string
+	State  SessionState
+	Memory map[string]any
+}
+
+// TODO: create a method to send message and improve improve api ergonomic
+// hiding Output
+type ActionInput struct {
+	Session *Session
+	Message *message.Message
+	Output  chan<- message.Message
+}
+
+type ActionFunc func(ctx context.Context, input ActionInput)
+type MatcherFunc func(rules []Rule, input string) (Rule, bool)
+type RuleEngineOption func(engine *RuleEngine)
+
+type SessionRepo interface {
+	GetOrCreate(ctx context.Context, sessionID string) *Session
+	Save(ctx context.Context, session *Session) error
+}
+
+func WithMatcher(m MatcherFunc) RuleEngineOption {
+	return func(engine *RuleEngine) {
+		engine.matcher = m
+	}
+}
+
+func WithSessionRepo(repo SessionRepo) RuleEngineOption {
+	return func(engine *RuleEngine) {
+		engine.sessionRepo = repo
+	}
+}
+
+type RuleEngine struct {
+	matcher     MatcherFunc
+	sessionRepo SessionRepo
+	rules       []Rule
+	ruleGroups  map[string][]Rule
+}
+
+func NewRuleEngine(opts ...RuleEngineOption) *RuleEngine {
+	engine := &RuleEngine{}
+
+	for _, opt := range opts {
+		opt(engine)
+	}
+
+	if engine.matcher == nil {
+		engine.matcher = DefaultMatcher
+	}
+
+	if engine.sessionRepo == nil {
+		engine.sessionRepo = NewInMemorySessionRepo()
+	}
+
+	return engine
+}
+
+func (e *RuleEngine) RegisterRule(rule ...Rule) {
+	e.rules = append(e.rules, rule...)
+}
+
+func (e *RuleEngine) HandleMessage(ctx context.Context, msg *message.Message, msgCh chan<- message.Message) {
+	session := e.sessionRepo.GetOrCreate(ctx, msg.User.ID)
+	actionInput := ActionInput{Session: session, Message: msg, Output: msgCh}
+
+	switch state := session.State.(type) {
+	case IdleState:
+		e.handleIdleState(ctx, actionInput)
+	case WaitingInputState:
+		e.handleWaitingInputState(ctx, actionInput, state)
+	case WaitingChoiceState:
+		e.handleWaitingChoiceState(ctx, actionInput, state)
+	default:
+		e.handleUnknownState(actionInput)
+	}
+}
+
+func (e *RuleEngine) handleIdleState(ctx context.Context, input ActionInput) {
+	rule, ok := e.matcher(e.rules, input.Message.Input)
+	if !ok {
+		input.Message.Output = "desculpe não entendi"
+		input.Output <- *input.Message
+		return
+	}
+
+	input.Session.State = rule.NextState
+	rule.Action(ctx, input)
+
+}
+
+func (e *RuleEngine) handleWaitingInputState(ctx context.Context, input ActionInput, state WaitingInputState) {
+	if strings.TrimSpace(input.Message.Input) == "" {
+		input.Message.Output = state.PromptEmptyMessage
+		input.Output <- *input.Message
+		return
+	}
+	state.Action(ctx, input)
+}
+
+func (e *RuleEngine) handleWaitingChoiceState(ctx context.Context, input ActionInput, state WaitingChoiceState) {
+	handler, ok := state.Choices[input.Message.Input]
+	if !ok {
+		input.Message.Output = "Opção inválida. " + state.Prompt
+		input.Output <- *input.Message
+		return
+	}
+
+	input.Session.State = IdleState{}
+	handler(ctx, input)
+
+}
+
+func (e *RuleEngine) handleUnknownState(input ActionInput) {
+	input.Message.Output = "Erro interno: estado desconhecido."
+	input.Output <- *input.Message
+}
+
+func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
+	for _, rule := range rules {
+		for _, pattern := range rule.Prompts {
+			if strings.Contains(strings.ToLower(input), strings.ToLower(pattern)) {
+				return rule, true
+			}
+		}
+	}
+	return Rule{}, false
+}

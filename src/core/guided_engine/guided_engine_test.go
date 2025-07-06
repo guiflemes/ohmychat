@@ -1,4 +1,4 @@
-package core
+package guidedengine
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 func TestMain(m *testing.M) {
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 type FakeAction struct{}
 
-func (a *FakeAction) Handle(ctx context.Context, message *models.Message) error {
+func (a *FakeAction) Handle(ctx context.Context, message *message.Message) error {
 	return nil
 }
 
@@ -344,13 +344,13 @@ func (g *GuidedEngineSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
-	output := make(chan models.Message, 1)
+	output := make(chan message.Message, 1)
 
 	type testCase struct {
 		desc            string
-		input           models.Message
+		input           message.Message
 		expectedContent string
-		expectedOptions []models.Option
+		expectedOptions []message.Option
 		SetUnready      bool
 		hasAction       bool
 	}
@@ -358,9 +358,9 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 	for _, c := range []testCase{
 		{
 			desc:            "startup chat conversation",
-			input:           models.Message{Input: "hello sir"},
+			input:           message.Message{Input: "hello sir"},
 			expectedContent: "hello world",
-			expectedOptions: []models.Option{
+			expectedOptions: []message.Option{
 				{
 					ID:   "child1",
 					Name: "im child1",
@@ -377,9 +377,9 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 		},
 		{
 			desc:            "press child1 option",
-			input:           models.Message{Input: "child1"},
+			input:           message.Message{Input: "child1"},
 			expectedContent: "hello im child1",
-			expectedOptions: []models.Option{
+			expectedOptions: []message.Option{
 				{
 					ID:   "child1child1",
 					Name: "im child1 from child1",
@@ -393,9 +393,9 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 		},
 		{
 			desc:            "press invalid option, go back to the root",
-			input:           models.Message{Input: "invalid"},
+			input:           message.Message{Input: "invalid"},
 			expectedContent: "hello world",
-			expectedOptions: []models.Option{
+			expectedOptions: []message.Option{
 				{
 					ID:   "child1",
 					Name: "im child1",
@@ -412,7 +412,7 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 		},
 		{
 			desc:            "engine is not ready",
-			input:           models.Message{Input: "hello sir"},
+			input:           message.Message{Input: "hello sir"},
 			expectedContent: "some error ocurred, please contant admin",
 			SetUnready:      true,
 		},
@@ -427,7 +427,7 @@ func (g *GuidedEngineSuite) TestHandleMessageFallbackStrategy() {
 				g.engine.setup = false
 			}
 
-			go g.engine.HandleMessage(c.input, output)
+			go g.engine.HandleMessage(context.Background(), c.input, output)
 
 			result := <-output
 

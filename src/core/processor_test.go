@@ -6,35 +6,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 type FakeEgine1 struct {
 	engineName string
 }
 
-func (f *FakeEgine1) Name() string { return f.engineName }
-func (f *FakeEgine1) HandleMessage(input models.Message, output chan<- models.Message) {
-	response := &input
-	response.Output = "message processed"
-	output <- *response
+func (f *FakeEgine1) HandleMessage(ctx context.Context, input *message.Message, output chan<- message.Message) {
+	input.Output = "message processed"
+	output <- *input
 }
-func (f *FakeEgine1) GetActionStorageService() ActionStorageService { return nil }
-func (f *FakeEgine1) Config(channelName string) error               { return nil }
-func (f *FakeEgine1) IsReady() bool                                 { return true }
+func (f *FakeEgine1) Config(channelName string) error { return nil }
+func (f *FakeEgine1) IsReady() bool                   { return true }
 
 type FakeChatBotGetter struct{}
-
-func (f *FakeChatBotGetter) GetChatBot(botName string) *models.ChatBot {
-	if botName != "bot_test" {
-		return nil
-	}
-	return &models.ChatBot{
-		BotName:    "bot_test",
-		Engine:     "engine_test",
-		WorkflowID: "workflow_test",
-	}
-}
 
 type Status int
 
@@ -62,16 +48,15 @@ func TestProcess(t *testing.T) {
 	} {
 		t.Run(scenario.desc, func(t *testing.T) {
 
-			inputMsg := make(chan models.Message, 1)
-			outputMsg := make(chan models.Message, 1)
-			chatBotRepo := &FakeChatBotGetter{}
+			inputMsg := make(chan message.Message, 1)
+			outputMsg := make(chan message.Message, 1)
 			engine := &FakeEgine1{engineName: scenario.engineName}
-			processor := NewProcessor(chatBotRepo, []Engine{engine})
+			processor := NewProcessor(engine)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go processor.Process(ctx, inputMsg, outputMsg)
-			inputMsg <- models.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
+			inputMsg <- message.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
 
 			result := <-outputMsg
 			assert.Equal(result.ID, "123")

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -9,7 +8,9 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
+
+	"oh-my-chat/src/context"
 )
 
 func TestMain(m *testing.M) {
@@ -47,17 +48,17 @@ func TestAcquire(t *testing.T) {
 	assert := assert.New(t)
 
 	t.Run("Ctx done", func(t *testing.T) {
-		conn := &cliConnector{&MockBot{updates: 5}}
-		ctx, cancel := context.WithCancel(context.Background())
+		conn := &cliConnector{bot: &MockBot{updates: 5}}
+		ctx := context.NewChatContext()
 
 		go func() {
 			select {
 			case <-time.After(time.Millisecond * 100):
-				cancel()
+				ctx.Shutdown()
 			}
 		}()
 
-		input := make(chan models.Message, 1)
+		input := make(chan message.Message, 1)
 
 		go func() {
 			for {
@@ -70,21 +71,21 @@ func TestAcquire(t *testing.T) {
 			}
 		}()
 
-		conn.Acquire(ctx, input)
+		conn.Acquire(context.NewChatContext(), input)
 		assert.True(true)
 	})
 
 	t.Run("Acquire message", func(t *testing.T) {
-		conn := &cliConnector{&MockBot{updates: 5}}
-		ctx, cancel := context.WithCancel(context.Background())
+		conn := &cliConnector{bot: &MockBot{updates: 5}}
+		ctx := context.NewChatContext()
 
-		input := make(chan models.Message, 1)
+		input := make(chan message.Message, 1)
 		go func() {
 			var receveid int8
 			for msg := range input {
 				receveid++
 				if receveid == 5 {
-					cancel()
+					ctx.Shutdown()
 				}
 
 				assert.Equal("CLI", msg.BotID)
@@ -101,8 +102,8 @@ func TestAcquire(t *testing.T) {
 func TestSendMessage(t *testing.T) {
 
 	t.Run("TextResponse", func(t *testing.T) {
-		msg := models.NewMessage()
-		msg.ResponseType = models.TextResponse
+		msg := message.NewMessage()
+		msg.ResponseType = message.TextResponse
 		msg.Output = "My message"
 		mockBot := &MockBot{}
 		mockBot.Mock.On("SendMessage", mock.MatchedBy(func(message Message) bool {
@@ -117,9 +118,9 @@ func TestSendMessage(t *testing.T) {
 	})
 
 	t.Run("OptionResponse", func(t *testing.T) {
-		msg := models.NewMessage()
-		msg.ResponseType = models.OptionResponse
-		msg.Options = []models.Option{{ID: "1", Name: "Name"}}
+		msg := message.NewMessage()
+		msg.ResponseType = message.OptionResponse
+		msg.Options = []message.Option{{ID: "1", Name: "Name"}}
 
 		mockBot := &MockBot{}
 

@@ -1,17 +1,27 @@
-package core
+package guidedengine
 
 import (
-	"context"
 	"fmt"
 
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
+	"oh-my-chat/src/message"
 )
 
 type Action interface {
-	Handle(ctx context.Context, message *models.Message) error
+	Handle(ctx context.Context, message *message.Message) error
+}
+
+type ActionReplyPair struct {
+	ReplyTo chan<- message.Message
+	Action  Action
+	Input   message.Message
+}
+
+type ActionStorageService interface {
+	Enqueue(actioonPair ActionReplyPair)
 }
 
 type Message struct {
@@ -189,6 +199,7 @@ type GuidedResponseRepo interface {
 	GetMessageTree(workflowID string) (*MessageTree, error)
 }
 
+// guidedResponseEngine is currently not operational and pending implementation.
 type guidedResponseEngine struct {
 	tree         *MessageTree
 	node         *MessageNode
@@ -199,10 +210,12 @@ type guidedResponseEngine struct {
 	repo         GuidedResponseRepo
 }
 
+// Deprecated: guidedResponseEngine is currently not operational and pending implementation.
 func NewGuidedResponseEngine(
 	actionQueue ActionStorageService,
 	repo GuidedResponseRepo,
 ) *guidedResponseEngine {
+
 	return &guidedResponseEngine{
 		actionQueue: actionQueue,
 		chatRouting: Fallback,
@@ -268,7 +281,7 @@ func (e *guidedResponseEngine) Name() string {
 	return "guided"
 }
 
-func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<- models.Message) {
+func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input message.Message, output chan<- message.Message) {
 
 	if !e.setup {
 		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))
@@ -286,17 +299,17 @@ func (e *guidedResponseEngine) HandleMessage(input models.Message, output chan<-
 		storageAction.Enqueue(actionPair)
 	}
 
-	options := make([]models.Option, 0)
+	options := make([]message.Option, 0)
 	e.node.TransverseInChildren(func(child *MessageNode) {
 		options = append(
 			options,
-			models.Option{ID: child.Message().ID(), Name: child.Message().name},
+			message.Option{ID: child.Message().ID(), Name: child.Message().name},
 		)
 	})
 
 	response := &input
 	response.Output = e.node.Message().Content
 	response.Options = options
-	response.ResponseType = models.OptionResponse
+	response.ResponseType = message.OptionResponse
 	output <- *response
 }

@@ -8,27 +8,42 @@ import (
 	"github.com/abiosoft/ishell"
 
 	"oh-my-chat/src/logger"
-	"oh-my-chat/src/models"
 )
 
-func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
+type CliOption func(cli *CliBot)
 
-	listWorflows := botConfig.CliDependencies.ListWorkflows
+func NewCliBot(shell *ishell.Shell, control *ChatControl, opts ...CliOption) *CliBot {
 
-	if len(listWorflows()) == 0 {
-		panic("cli has not workflows")
+	cliBot := &CliBot{
+		Buffer:          10,
+		shutdownChannel: make(chan struct{}, 1),
+		receiveCh:       make(chan string, 10),
+		multiChoiceCh:   make(chan Message, 1),
+		outputCh:        make(chan Message, 1),
+		waitingResponse: false,
+	}
+
+	for _, opt := range opts {
+		opt(cliBot)
+	}
+
+	if cliBot.listWorflows == nil {
+		cliBot.listWorflows = []string{"new_chat"}
 	}
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
 		if count >= 1 {
 			c.Println("Interrupted")
 			shell.Stop()
+			if control.ctx == nil {
+				panic("ctx in null")
+			}
+			control.ctx.Shutdown()
 		}
-		c.Println("Input Ctrl-c once more to exit")
 	})
 
 	go func() {
-		if !botConfig.CliDependencies.DisableInitialization {
+		if !cliBot.disableInitialization {
 
 			fmt.Println(`
      ( )
@@ -40,8 +55,6 @@ func NewCliBot(botConfig *models.Bot, shell *ishell.Shell) *CliBot {
 		}
 		shell.Run()
 	}()
-
-	cliBot := newCliBot(listWorflows())
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "chat",
@@ -81,26 +94,16 @@ type UpdateChannel <-chan Update
 type ListWorflows []string
 
 type CliBot struct {
-	Buffer          int
-	shutdownChannel chan struct{}
-	receiveCh       chan string
-	shellCtx        *ishell.Context
-	multiChoiceCh   chan Message
-	blocked         bool
-	workflow        string
-	listWorflows    ListWorflows
-}
-
-func newCliBot(listWorflows ListWorflows) *CliBot {
-
-	return &CliBot{
-		Buffer:          10,
-		shutdownChannel: make(chan struct{}, 1),
-		receiveCh:       make(chan string, 10),
-		multiChoiceCh:   make(chan Message, 1),
-		blocked:         false,
-		listWorflows:    listWorflows,
-	}
+	Buffer                int
+	shutdownChannel       chan struct{}
+	receiveCh             chan string
+	shellCtx              *ishell.Context
+	multiChoiceCh         chan Message
+	outputCh              chan Message
+	workflow              string
+	listWorflows          ListWorflows
+	waitingResponse       bool
+	disableInitialization bool
 }
 
 func (bot *CliBot) IsRunning() bool {
@@ -114,34 +117,31 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 	bot.workflow = bot.listWorflows[choice]
 
 	for {
-		select {
-
-		case message, ok := <-bot.multiChoiceCh:
-			if ok {
-				choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
-				bot.receiveCh <- message.MultiChoice[choice]
-				break
-			}
-		default:
-			if bot.blocked {
-				continue
-			}
-			bot.blocked = true
-
-			bot.shellCtx.Print("You: ")
+		if !bot.waitingResponse {
+			bot.shellCtx.Print("YOU: ")
 			input := bot.shellCtx.ReadLine()
 			input = strings.TrimSpace(input)
 
-			if input == "" {
-				continue
-			}
-
 			if input == "exit" {
+				//TODO se der um exit, o chat vai entrar em modo suspenso, e sppo CTRL-C vai parar ele, de um jeito de o chat pedir algo
+				// deixar em modo, saindo/aguardado (qualquer exit deixa nesse modo, até no menu inicial)
 				bot.shellCtx.Println("Exiting chat mode...")
+				bot.shellCtx.Println("Input Ctrl-c to exit")
 				return
 			}
-			bot.receiveCh <- input
 
+			bot.receiveCh <- input
+			bot.waitingResponse = true
+		}
+
+		select {
+		case message := <-bot.multiChoiceCh:
+			choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
+			bot.receiveCh <- message.MultiChoice[choice]
+		case message := <-bot.outputCh:
+			bot.shellCtx.Print("BOT: ")
+			bot.shellCtx.Println(message.Text)
+			bot.waitingResponse = false
 		}
 	}
 }
@@ -189,9 +189,6 @@ func (bot *CliBot) SendMessage(message Message) {
 		return
 	}
 
-	bot.shellCtx.Println(message.Text)
-	if message.UnBlockByAction {
-		bot.blocked = false
-	}
+	bot.outputCh <- message
 
 }

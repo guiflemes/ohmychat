@@ -1,4 +1,4 @@
-package models
+package message
 
 import (
 	"time"
@@ -56,6 +56,10 @@ type Option struct {
 	Name string `json:"name"`
 }
 
+type User struct {
+	ID string
+}
+
 type Message struct {
 	ID           string           `json:"id"`
 	Type         MessageType      `json:"type"`
@@ -75,6 +79,7 @@ type Message struct {
 	ResponseType ResponseType     `json:"response_type"`
 	Meta         *Meta            `json:"meta"`
 	ActionDone   bool
+	User         User
 }
 
 func NewMessage() Message {
