@@ -10,6 +10,7 @@ import (
 
 	"oh-my-chat/src/bot"
 	settings "oh-my-chat/src/config"
+	"oh-my-chat/src/connector/cli"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
@@ -27,7 +28,7 @@ func Run(engine core.Engine) {
 	ctx := bot.Ctx()
 
 	processor := core.NewProcessor(engine)
-	connector := core.NewMuitiChannelConnector(bot)
+	connector := core.NewMuitiChannelConnector(cli.NewCliConnector(bot))
 
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)

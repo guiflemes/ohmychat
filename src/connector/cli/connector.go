@@ -21,10 +21,10 @@ type cliConnector struct {
 	bot BotCli
 }
 
-func NewCliConnector(bot *bot.Bot) (connector.Connector, error) {
+func NewCliConnector(bot *bot.Bot) connector.Connector {
 	cliBot := NewCliBot(bot, ishell.New())
 	conn := &cliConnector{bot: cliBot}
-	return conn, nil
+	return conn
 }
 
 func (cli *cliConnector) Acquire(ctx context.Context, input chan<- message.Message) {
