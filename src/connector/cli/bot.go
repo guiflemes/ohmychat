@@ -7,28 +7,43 @@ import (
 
 	"github.com/abiosoft/ishell"
 
-	"oh-my-chat/src/bot"
 	"oh-my-chat/src/logger"
 )
 
-func NewCliBot(bot *bot.Bot, shell *ishell.Shell) *CliBot {
+type CliOption func(cli *CliBot)
 
-	listWorflows := bot.CliDependencies.ListWorkflows
+func NewCliBot(shell *ishell.Shell, control *ChatControl, opts ...CliOption) *CliBot {
 
-	if listWorflows == nil {
-		listWorflows = func() []string { return []string{"new_chat"} }
+	cliBot := &CliBot{
+		Buffer:          10,
+		shutdownChannel: make(chan struct{}, 1),
+		receiveCh:       make(chan string, 10),
+		multiChoiceCh:   make(chan Message, 1),
+		outputCh:        make(chan Message, 1),
+		waitingResponse: false,
+	}
+
+	for _, opt := range opts {
+		opt(cliBot)
+	}
+
+	if cliBot.listWorflows == nil {
+		cliBot.listWorflows = []string{"new_chat"}
 	}
 
 	shell.Interrupt(func(c *ishell.Context, count int, input string) {
 		if count >= 1 {
 			c.Println("Interrupted")
 			shell.Stop()
-			bot.Shutdown()
+			if control.ctx == nil {
+				panic("ctx in null")
+			}
+			control.ctx.Shutdown()
 		}
 	})
 
 	go func() {
-		if !bot.CliDependencies.DisableInitialization {
+		if !cliBot.disableInitialization {
 
 			fmt.Println(`
      ( )
@@ -40,8 +55,6 @@ func NewCliBot(bot *bot.Bot, shell *ishell.Shell) *CliBot {
 		}
 		shell.Run()
 	}()
-
-	cliBot := newCliBot(listWorflows())
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "chat",
@@ -81,28 +94,16 @@ type UpdateChannel <-chan Update
 type ListWorflows []string
 
 type CliBot struct {
-	Buffer          int
-	shutdownChannel chan struct{}
-	receiveCh       chan string
-	shellCtx        *ishell.Context
-	multiChoiceCh   chan Message
-	outputCh        chan Message
-	workflow        string
-	listWorflows    ListWorflows
-	waitingResponse bool
-}
-
-func newCliBot(listWorflows ListWorflows) *CliBot {
-
-	return &CliBot{
-		Buffer:          10,
-		shutdownChannel: make(chan struct{}, 1),
-		receiveCh:       make(chan string, 10),
-		multiChoiceCh:   make(chan Message, 1),
-		outputCh:        make(chan Message, 1),
-		listWorflows:    listWorflows,
-		waitingResponse: false,
-	}
+	Buffer                int
+	shutdownChannel       chan struct{}
+	receiveCh             chan string
+	shellCtx              *ishell.Context
+	multiChoiceCh         chan Message
+	outputCh              chan Message
+	workflow              string
+	listWorflows          ListWorflows
+	waitingResponse       bool
+	disableInitialization bool
 }
 
 func (bot *CliBot) IsRunning() bool {

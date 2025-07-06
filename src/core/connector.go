@@ -1,7 +1,7 @@
 package core
 
 import (
-	"context"
+	"oh-my-chat/src/context"
 
 	"oh-my-chat/src/connector"
 	"oh-my-chat/src/message"
@@ -15,11 +15,11 @@ func NewMuitiChannelConnector(conn connector.Connector) *multiChannelConnector {
 	return &multiChannelConnector{connector: conn}
 }
 
-func (c *multiChannelConnector) Request(ctx context.Context, input chan<- message.Message) {
+func (c *multiChannelConnector) Request(ctx *context.ChatContext, input chan<- message.Message) {
 	c.connector.Acquire(ctx, input)
 }
 
-func (c *multiChannelConnector) Response(ctx context.Context, output <-chan message.Message) {
+func (c *multiChannelConnector) Response(ctx *context.ChatContext, output <-chan message.Message) {
 	for {
 		select {
 		case msg, ok := <-output:

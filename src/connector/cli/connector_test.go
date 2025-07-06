@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -10,6 +9,8 @@ import (
 
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
+
+	"oh-my-chat/src/context"
 )
 
 func TestMain(m *testing.M) {
@@ -47,13 +48,13 @@ func TestAcquire(t *testing.T) {
 	assert := assert.New(t)
 
 	t.Run("Ctx done", func(t *testing.T) {
-		conn := &cliConnector{&MockBot{updates: 5}}
-		ctx, cancel := context.WithCancel(context.Background())
+		conn := &cliConnector{bot: &MockBot{updates: 5}}
+		ctx := context.NewChatContext()
 
 		go func() {
 			select {
 			case <-time.After(time.Millisecond * 100):
-				cancel()
+				ctx.Shutdown()
 			}
 		}()
 
@@ -70,13 +71,13 @@ func TestAcquire(t *testing.T) {
 			}
 		}()
 
-		conn.Acquire(ctx, input)
+		conn.Acquire(context.NewChatContext(), input)
 		assert.True(true)
 	})
 
 	t.Run("Acquire message", func(t *testing.T) {
-		conn := &cliConnector{&MockBot{updates: 5}}
-		ctx, cancel := context.WithCancel(context.Background())
+		conn := &cliConnector{bot: &MockBot{updates: 5}}
+		ctx := context.NewChatContext()
 
 		input := make(chan message.Message, 1)
 		go func() {
@@ -84,7 +85,7 @@ func TestAcquire(t *testing.T) {
 			for msg := range input {
 				receveid++
 				if receveid == 5 {
-					cancel()
+					ctx.Shutdown()
 				}
 
 				assert.Equal("CLI", msg.BotID)
