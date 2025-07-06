@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"context"
 	"fmt"
+	"oh-my-chat/src/context"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -22,7 +22,7 @@ func NewTelegramConnector(client *tgbotapi.BotAPI) connector.Connector {
 	return &telegram{client: client}
 }
 
-func (t *telegram) Acquire(ctx context.Context, input chan<- message.Message) {
+func (t *telegram) Acquire(ctx *context.ChatContext, input chan<- message.Message) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

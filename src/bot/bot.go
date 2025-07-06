@@ -1,43 +1,63 @@
 package bot
 
 import (
-	"context"
 	"oh-my-chat/src/connector"
+	"oh-my-chat/src/context"
+	"oh-my-chat/src/core"
+	"oh-my-chat/src/logger"
+	"oh-my-chat/src/message"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
+	"go.uber.org/zap"
 )
 
 type Bot struct {
-	Connector       connector.Connector
-	IsReady         string
-	CliDependencies CliDependencies
-	ctx             context.Context
-	cancel          context.CancelFunc
+	Connector connector.Connector
 }
 
-// CliDependencies contains the dependencies for the CliBot, including a function to list workflows
-// and a flag to control the initialization of the shell.
-//
-// DisableInitialization is a flag that should be used exclusively during testing to prevent
-// the execution of initialization code and display of messages that are specific to the production
-// environment. When set to true, the CliBot will skip the usual initialization and welcome messages
-// that would normally be shown during standard execution. In production environments, this flag
-// should remain false to ensure that full initialization and welcome messages are displayed as expected.
-type CliDependencies struct {
-	ListWorkflows         func() []string
-	DisableInitialization bool
-}
+func (b *Bot) Run(engine core.Engine) {
 
-func NewBot() *Bot {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &Bot{
-		ctx:    ctx,
-		cancel: cancel,
-	}
-}
+	inputMsg := make(chan message.Message, 1)
+	outputMsg := make(chan message.Message, 1)
 
-func (b *Bot) Ctx() context.Context {
-	return b.ctx
-}
+	chatCtx := context.NewChatContext()
 
-func (b *Bot) Shutdown() {
-	b.cancel()
+	processor := core.NewProcessor(engine)
+	connector := core.NewMuitiChannelConnector(b.Connector)
+
+	sign := make(chan os.Signal, 1)
+	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
+
+	//TODO  when cli connector is running, the cancelation never comes here, find a way out to fix it
+	go func() {
+		sig := <-sign
+		logger.Logger.Info("Received signal, stopping", zap.String("signal", sig.String()))
+		chatCtx.Shutdown()
+	}()
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		processor.Process(chatCtx.Context(), inputMsg, outputMsg)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		connector.Request(chatCtx, inputMsg)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		connector.Response(chatCtx, outputMsg)
+	}()
+
+	wg.Wait()
+
 }

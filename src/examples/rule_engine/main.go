@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	app "oh-my-chat/src"
+	"oh-my-chat/src/bot"
 	"oh-my-chat/src/core/rule_engine"
 	"oh-my-chat/src/message"
 	"regexp"
+
+	"oh-my-chat/src/connector/cli"
 )
 
 func main() {
@@ -64,5 +66,7 @@ func main() {
 			},
 		},
 	)
-	app.Run(engine)
+
+	chatBot := bot.Bot{Connector: cli.NewCliConnector()}
+	chatBot.Run(engine)
 }
