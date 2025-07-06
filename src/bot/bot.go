@@ -2,8 +2,6 @@ package bot
 
 import (
 	"context"
-	"oh-my-chat/settings"
-	"oh-my-chat/src/config"
 	"oh-my-chat/src/connector"
 	"oh-my-chat/src/message"
 )
@@ -31,13 +29,11 @@ type CliDependencies struct {
 	DisableInitialization bool
 }
 
-func NewBot(config config.OhMyChatConfig) *Bot {
+func NewBot() *Bot {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Bot{
-		ChatConnector:  message.MessageConnector(config.Connector.Provider),
-		TelegramConfig: TelegramConfig{Token: settings.GetEnvOrDefault("TELEGRAM_TOKEN", "")},
-		ctx:            ctx,
-		cancel:         cancel,
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
-	"oh-my-chat/src/bot"
 	"oh-my-chat/src/connector"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
@@ -19,15 +18,8 @@ type telegram struct {
 	client *tgbotapi.BotAPI
 }
 
-func NewTelegramConnector(bot *bot.Bot) (connector.Connector, error) {
-	client, err := tgbotapi.NewBotAPI(bot.TelegramConfig.Token)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &telegram{client: client}, nil
-
+func NewTelegramConnector(client *tgbotapi.BotAPI) connector.Connector {
+	return &telegram{client: client}
 }
 
 func (t *telegram) Acquire(ctx context.Context, input chan<- message.Message) {

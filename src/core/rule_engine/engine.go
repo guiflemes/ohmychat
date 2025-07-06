@@ -18,6 +18,8 @@ type Session struct {
 	Memory map[string]any
 }
 
+// TODO: create a method to send message and improve improve api ergonomic
+// hiding Output
 type ActionInput struct {
 	Session *Session
 	Message *message.Message

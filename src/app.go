@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	"oh-my-chat/src/bot"
-	settings "oh-my-chat/src/config"
 	"oh-my-chat/src/connector/cli"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
@@ -17,14 +16,11 @@ import (
 )
 
 func Run(engine core.Engine) {
-	cfg := settings.OhMyChatConfig{
-		Connector: settings.Connector{Provider: settings.Cli},
-	}
 
 	inputMsg := make(chan message.Message, 1)
 	outputMsg := make(chan message.Message, 1)
 
-	bot := bot.NewBot(cfg)
+	bot := bot.NewBot()
 	ctx := bot.Ctx()
 
 	processor := core.NewProcessor(engine)
