@@ -3,13 +3,10 @@ package bot
 import (
 	"context"
 	"oh-my-chat/src/connector"
-	"oh-my-chat/src/message"
 )
 
 type Bot struct {
-	ChatConnector   message.MessageConnector
 	Connector       connector.Connector
-	TelegramConfig  TelegramConfig
 	IsReady         string
 	CliDependencies CliDependencies
 	ctx             context.Context
@@ -43,8 +40,4 @@ func (b *Bot) Ctx() context.Context {
 
 func (b *Bot) Shutdown() {
 	b.cancel()
-}
-
-type TelegramConfig struct {
-	Token string
 }

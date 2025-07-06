@@ -1,18 +1,20 @@
+## Refactor
+- [ ] Improve API ergonomics  
+  - Avoid having the user send messages through the output channel directly  
+  - Create a method to allow users to send messages properly
+
+- [ ] Create a dedicated context for the chat  
+  - Encapsulate all session-related data and logic within this new context
+
+- [ ] Refactor session management  
+  - Move session-related components into the new chat context structure
+
+- [ ] Decouple CLI from the bot at initialization  
+  - Ensure the CLI does not depend on the bot to start  
+  - Pass the context as a parameter instead of having the CLI create or rely on it
+
 ## Feat
-* Add parend node at MessageNode, it'll give the capacity to go back to the previous node 
-* Create endpoint to insert workflow
-* Create HTTP POST action
-* Create Google Drive action
-* Create dumb-based engine
-* Create nlu engine
-* Integrate other channels (Slack, Discord, Google Chat, command line)
-* Create other actions
 
 ## BUGS
-* Duplicated message Telegram, intermittent error, maybe we should lock some chat(messageID)??
 
 ## TESTS
-* Processor
-* Connector for response and request
-* Telegram connector
-* Tree
