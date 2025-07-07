@@ -32,7 +32,8 @@ func (m *processor) Process(
 			if !ok {
 				return
 			}
-			m.engine.HandleMessage(ctx.Context(), &message, outputMsg)
+			childCtx := ctx.NewChildContext()
+			m.engine.HandleMessage(childCtx.Context(), &message, outputMsg)
 
 		case <-ctx.Done():
 			return

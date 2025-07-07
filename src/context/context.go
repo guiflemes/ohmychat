@@ -5,6 +5,7 @@ import (
 	"errors"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/session"
+	"time"
 )
 
 type SessionAdapter interface {
@@ -69,6 +70,15 @@ func (c *ChatContext) Get(key string) (any, bool) {
 	return v, ok
 }
 
+func (r *ChatContext) NewChildContext() *Context {
+	ctx, cancel := context.WithTimeout(r.ctx, 60*time.Second)
+	return &Context{
+		ctx:    ctx,
+		cancel: cancel,
+		parent: r,
+	}
+}
+
 func (c *ChatContext) GetOrCreateSession(userID string) *session.Session {
 	if c.session == nil {
 		c.session = c.sessionAdapter.GetOrCreate(c.ctx, userID)
@@ -103,3 +113,27 @@ func (c *ChatContext) Session() *session.Session {
 // func (c *ChatContext) SendOutput(msg message.Message) {
 // 	c.outputCh <- msg
 // }
+
+type Context struct {
+	ctx     context.Context
+	cancel  context.CancelFunc
+	session *session.Session
+	parent  *ChatContext
+}
+
+func (b *Context) Context() context.Context {
+	return b.ctx
+}
+
+func (b *Context) Cancel() {
+	b.cancel()
+}
+
+func (b *Context) IsActive() bool {
+	select {
+	case <-b.ctx.Done():
+		return false
+	default:
+		return true
+	}
+}
