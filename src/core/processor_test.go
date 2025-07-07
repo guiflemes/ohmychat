@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	chatCtx "oh-my-chat/src/context"
 	"oh-my-chat/src/message"
 )
 
@@ -52,9 +53,8 @@ func TestProcess(t *testing.T) {
 			outputMsg := make(chan message.Message, 1)
 			engine := &FakeEgine1{engineName: scenario.engineName}
 			processor := NewProcessor(engine)
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := chatCtx.NewChatContext()
+			defer ctx.Shutdown()
 			go processor.Process(ctx, inputMsg, outputMsg)
 			inputMsg <- message.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
 

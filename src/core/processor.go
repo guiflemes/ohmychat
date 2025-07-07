@@ -2,8 +2,9 @@ package core
 
 import (
 	"context"
-
 	"oh-my-chat/src/message"
+
+	chatCtx "oh-my-chat/src/context"
 )
 
 type Engine interface {
@@ -21,7 +22,7 @@ func NewProcessor(engine Engine) *processor {
 }
 
 func (m *processor) Process(
-	ctx context.Context,
+	ctx *chatCtx.ChatContext,
 	inputMsg <-chan message.Message,
 	outputMsg chan<- message.Message,
 ) {
@@ -31,7 +32,7 @@ func (m *processor) Process(
 			if !ok {
 				return
 			}
-			m.engine.HandleMessage(ctx, &message, outputMsg)
+			m.engine.HandleMessage(ctx.Context(), &message, outputMsg)
 
 		case <-ctx.Done():
 			return
