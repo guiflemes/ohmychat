@@ -5,13 +5,16 @@ import (
 	"oh-my-chat/src/message"
 )
 
+type InputContext interface {
+	Context() context.Context
+}
+
 type ActionInput struct {
-	Session *Session
 	Message *message.Message
 	Output  chan<- message.Message
 }
 
-type ActionFunc func(ctx context.Context, input ActionInput)
+type ActionFunc func(ctx InputContext, input ActionInput)
 
 type SessionState interface {
 	IsState()

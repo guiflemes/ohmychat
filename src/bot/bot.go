@@ -6,7 +6,6 @@ import (
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
-	"oh-my-chat/src/session"
 	"os"
 	"os/signal"
 	"sync"
@@ -14,11 +13,6 @@ import (
 
 	"go.uber.org/zap"
 )
-
-type SessionAdapter interface {
-	GetOrCreate(ctx context.ChatContext, sessionID string) *session.Session
-	Save(ctx context.ChatContext, session *session.Session) error
-}
 
 type Bot struct {
 	Connector connector.Connector

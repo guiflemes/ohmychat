@@ -2,15 +2,22 @@ package context
 
 import (
 	"context"
-	"errors"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/session"
 	"time"
 )
 
 type SessionAdapter interface {
-	GetOrCreate(ctx context.Context, sessionID string) *session.Session
+	GetOrCreate(ctx context.Context, sessionID string) (*session.Session, error)
 	Save(ctx context.Context, session *session.Session) error
+}
+
+type ChatContextOption func(ctx *ChatContext)
+
+func WithSessionAdapter(adapater SessionAdapter) ChatContextOption {
+	return func(ctx *ChatContext) {
+		ctx.sessionAdapter = adapater
+	}
 }
 
 type ChatContext struct {
@@ -21,22 +28,30 @@ type ChatContext struct {
 	receiveCh      chan string
 	outputCh       chan message.Message
 	shutdownCh     chan struct{}
-	session        *session.Session
 	sessionAdapter SessionAdapter
 }
 
-func NewChatContext() *ChatContext {
+func NewChatContext(options ...ChatContextOption) *ChatContext {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &ChatContext{
-		ctx:            ctx,
-		cancel:         cancel,
-		metadata:       make(map[string]any),
-		receiveCh:      make(chan string, 10),
-		outputCh:       make(chan message.Message, 10),
-		shutdownCh:     make(chan struct{}),
-		sessionAdapter: session.NewInMemorySessionRepo(),
+	chatCtx := &ChatContext{
+		ctx:        ctx,
+		cancel:     cancel,
+		metadata:   make(map[string]any),
+		receiveCh:  make(chan string, 10),
+		outputCh:   make(chan message.Message, 10),
+		shutdownCh: make(chan struct{}),
 	}
+
+	for _, opt := range options {
+		opt(chatCtx)
+	}
+
+	if chatCtx.sessionAdapter == nil {
+		chatCtx.sessionAdapter = session.NewInMemorySessionRepo()
+	}
+
+	return chatCtx
 }
 
 func (c *ChatContext) Context() context.Context {
@@ -70,31 +85,21 @@ func (c *ChatContext) Get(key string) (any, bool) {
 	return v, ok
 }
 
-func (r *ChatContext) NewChildContext() *Context {
-	ctx, cancel := context.WithTimeout(r.ctx, 60*time.Second)
+func (c *ChatContext) NewChildContext(msg message.Message) (*Context, error) {
+	ctx, cancel := context.WithTimeout(c.ctx, 60*time.Second)
+
+	sess, err := c.sessionAdapter.GetOrCreate(ctx, msg.User.ID)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
 	return &Context{
-		ctx:    ctx,
-		cancel: cancel,
-		parent: r,
-	}
-}
-
-func (c *ChatContext) GetOrCreateSession(userID string) *session.Session {
-	if c.session == nil {
-		c.session = c.sessionAdapter.GetOrCreate(c.ctx, userID)
-	}
-	return c.session
-}
-
-func (c *ChatContext) SaveSession() error {
-	if c.session == nil {
-		return errors.New("no session to save")
-	}
-	return c.sessionAdapter.Save(c.ctx, c.session)
-}
-
-func (c *ChatContext) Session() *session.Session {
-	return c.session
+		ctx:     ctx,
+		cancel:  cancel,
+		parent:  c,
+		session: sess,
+	}, nil
 }
 
 // TODO use it to make api easier
@@ -121,19 +126,23 @@ type Context struct {
 	parent  *ChatContext
 }
 
-func (b *Context) Context() context.Context {
-	return b.ctx
+func (c *Context) Context() context.Context {
+	return c.ctx
 }
 
-func (b *Context) Cancel() {
-	b.cancel()
+func (c *Context) Cancel() {
+	c.cancel()
 }
 
-func (b *Context) IsActive() bool {
+func (c *Context) IsActive() bool {
 	select {
-	case <-b.ctx.Done():
+	case <-c.ctx.Done():
 		return false
 	default:
 		return true
 	}
+}
+
+func (c *Context) Session() *session.Session {
+	return c.session
 }
