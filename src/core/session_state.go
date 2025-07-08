@@ -1,4 +1,4 @@
-package rule_engine
+package core
 
 type SessionState interface {
 	IsState()

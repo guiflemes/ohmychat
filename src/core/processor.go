@@ -1,13 +1,12 @@
 package core
 
 import (
-	"context"
-
+	"log"
 	"oh-my-chat/src/message"
 )
 
 type Engine interface {
-	HandleMessage(context.Context, *message.Message, chan<- message.Message)
+	HandleMessage(*Context, *message.Message)
 }
 
 type processor struct {
@@ -20,22 +19,28 @@ func NewProcessor(engine Engine) *processor {
 	}
 }
 
-func (m *processor) Process(
-	ctx context.Context,
+func (p *processor) Process(
+	ctx *ChatContext,
 	inputMsg <-chan message.Message,
 	outputMsg chan<- message.Message,
 ) {
 	for {
 		select {
-		case message, ok := <-inputMsg:
+		case msg, ok := <-inputMsg:
 			if !ok {
 				return
 			}
-			m.engine.HandleMessage(ctx, &message, outputMsg)
+			go func(m message.Message) {
+				childCtx, err := ctx.NewChildContext(m, outputMsg)
+				if err != nil {
+					log.Printf("error creating childCtx for session %s", m.User.ID)
+				}
+				p.engine.HandleMessage(childCtx, &m)
+				childCtx.Cancel()
+			}(msg)
 
 		case <-ctx.Done():
 			return
 		}
-
 	}
 }

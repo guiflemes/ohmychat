@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"oh-my-chat/src/connector"
-	"oh-my-chat/src/context"
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
@@ -15,7 +13,7 @@ import (
 )
 
 type Bot struct {
-	Connector connector.Connector
+	Connector core.Connector
 }
 
 func (b *Bot) Run(engine core.Engine) {
@@ -23,7 +21,7 @@ func (b *Bot) Run(engine core.Engine) {
 	inputMsg := make(chan message.Message, 1)
 	outputMsg := make(chan message.Message, 1)
 
-	chatCtx := context.NewChatContext()
+	chatCtx := core.NewChatContext()
 
 	processor := core.NewProcessor(engine)
 	connector := core.NewMuitiChannelConnector(b.Connector)
@@ -43,7 +41,7 @@ func (b *Bot) Run(engine core.Engine) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processor.Process(chatCtx.Context(), inputMsg, outputMsg)
+		processor.Process(chatCtx, inputMsg, outputMsg)
 	}()
 
 	wg.Add(1)

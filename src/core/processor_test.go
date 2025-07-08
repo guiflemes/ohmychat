@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,9 +12,9 @@ type FakeEgine1 struct {
 	engineName string
 }
 
-func (f *FakeEgine1) HandleMessage(ctx context.Context, input *message.Message, output chan<- message.Message) {
+func (f *FakeEgine1) HandleMessage(ctx *Context, input *message.Message) {
 	input.Output = "message processed"
-	output <- *input
+	ctx.SendOutput(input)
 }
 func (f *FakeEgine1) Config(channelName string) error { return nil }
 func (f *FakeEgine1) IsReady() bool                   { return true }
@@ -52,9 +51,8 @@ func TestProcess(t *testing.T) {
 			outputMsg := make(chan message.Message, 1)
 			engine := &FakeEgine1{engineName: scenario.engineName}
 			processor := NewProcessor(engine)
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := NewChatContext()
+			defer ctx.Shutdown()
 			go processor.Process(ctx, inputMsg, outputMsg)
 			inputMsg <- message.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
 
