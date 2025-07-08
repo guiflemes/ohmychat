@@ -10,7 +10,7 @@ import (
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 
-	"oh-my-chat/src/context"
+	"oh-my-chat/src/core"
 )
 
 func TestMain(m *testing.M) {
@@ -49,7 +49,7 @@ func TestAcquire(t *testing.T) {
 
 	t.Run("Ctx done", func(t *testing.T) {
 		conn := &cliConnector{bot: &MockBot{updates: 5}}
-		ctx := context.NewChatContext()
+		ctx := core.NewChatContext()
 
 		go func() {
 			select {
@@ -71,13 +71,13 @@ func TestAcquire(t *testing.T) {
 			}
 		}()
 
-		conn.Acquire(context.NewChatContext(), input)
+		conn.Acquire(core.NewChatContext(), input)
 		assert.True(true)
 	})
 
 	t.Run("Acquire message", func(t *testing.T) {
 		conn := &cliConnector{bot: &MockBot{updates: 5}}
-		ctx := context.NewChatContext()
+		ctx := core.NewChatContext()
 
 		input := make(chan message.Message, 1)
 		go func() {

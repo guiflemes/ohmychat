@@ -1,25 +1,27 @@
 package core
 
 import (
-	"oh-my-chat/src/context"
-
-	"oh-my-chat/src/connector"
 	"oh-my-chat/src/message"
 )
 
-type multiChannelConnector struct {
-	connector connector.Connector
+type Connector interface {
+	Acquire(ctx *ChatContext, input chan<- message.Message)
+	Dispatch(message message.Message)
 }
 
-func NewMuitiChannelConnector(conn connector.Connector) *multiChannelConnector {
+type multiChannelConnector struct {
+	connector Connector
+}
+
+func NewMuitiChannelConnector(conn Connector) *multiChannelConnector {
 	return &multiChannelConnector{connector: conn}
 }
 
-func (c *multiChannelConnector) Request(ctx *context.ChatContext, input chan<- message.Message) {
+func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message) {
 	c.connector.Acquire(ctx, input)
 }
 
-func (c *multiChannelConnector) Response(ctx *context.ChatContext, output <-chan message.Message) {
+func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message) {
 	for {
 		select {
 		case msg, ok := <-output:

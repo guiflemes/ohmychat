@@ -5,11 +5,10 @@ import (
 
 	"github.com/abiosoft/ishell"
 
-	"oh-my-chat/src/connector"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/utils"
 
-	"oh-my-chat/src/context"
+	"oh-my-chat/src/core"
 )
 
 type BotCli interface {
@@ -18,7 +17,7 @@ type BotCli interface {
 }
 
 type ChatControl struct {
-	ctx *context.ChatContext
+	ctx *core.ChatContext
 }
 
 type cliConnector struct {
@@ -26,14 +25,14 @@ type cliConnector struct {
 	control *ChatControl
 }
 
-func NewCliConnector(options ...CliOption) connector.Connector {
+func NewCliConnector(options ...CliOption) core.Connector {
 	control := &ChatControl{}
 	cliBot := NewCliBot(ishell.New(), control, options...)
 	conn := &cliConnector{bot: cliBot, control: control}
 	return conn
 }
 
-func (cli *cliConnector) Acquire(ctx *context.ChatContext, input chan<- message.Message) {
+func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) {
 	cli.control.ctx = ctx
 
 	updates := cli.bot.GetUpdateChanels()

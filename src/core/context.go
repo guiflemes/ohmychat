@@ -1,15 +1,14 @@
-package context
+package core
 
 import (
 	"context"
 	"oh-my-chat/src/message"
-	"oh-my-chat/src/session"
 	"time"
 )
 
 type SessionAdapter interface {
-	GetOrCreate(ctx context.Context, sessionID string) (*session.Session, error)
-	Save(ctx context.Context, session *session.Session) error
+	GetOrCreate(ctx context.Context, sessionID string) (*Session, error)
+	Save(ctx context.Context, session *Session) error
 }
 
 type ChatContextOption func(ctx *ChatContext)
@@ -25,8 +24,6 @@ type ChatContext struct {
 	cancel         context.CancelFunc
 	workflow       string
 	metadata       map[string]any
-	receiveCh      chan string
-	outputCh       chan message.Message
 	shutdownCh     chan struct{}
 	sessionAdapter SessionAdapter
 }
@@ -38,8 +35,6 @@ func NewChatContext(options ...ChatContextOption) *ChatContext {
 		ctx:        ctx,
 		cancel:     cancel,
 		metadata:   make(map[string]any),
-		receiveCh:  make(chan string, 10),
-		outputCh:   make(chan message.Message, 10),
 		shutdownCh: make(chan struct{}),
 	}
 
@@ -48,7 +43,7 @@ func NewChatContext(options ...ChatContextOption) *ChatContext {
 	}
 
 	if chatCtx.sessionAdapter == nil {
-		chatCtx.sessionAdapter = session.NewInMemorySessionRepo()
+		chatCtx.sessionAdapter = NewInMemorySessionRepo()
 	}
 
 	return chatCtx
@@ -85,7 +80,7 @@ func (c *ChatContext) Get(key string) (any, bool) {
 	return v, ok
 }
 
-func (c *ChatContext) NewChildContext(msg message.Message) (*Context, error) {
+func (c *ChatContext) NewChildContext(msg message.Message, outputCh chan<- message.Message) (*Context, error) {
 	ctx, cancel := context.WithTimeout(c.ctx, 60*time.Second)
 
 	sess, err := c.sessionAdapter.GetOrCreate(ctx, msg.User.ID)
@@ -95,35 +90,20 @@ func (c *ChatContext) NewChildContext(msg message.Message) (*Context, error) {
 	}
 
 	return &Context{
-		ctx:     ctx,
-		cancel:  cancel,
-		parent:  c,
-		session: sess,
+		ctx:      ctx,
+		cancel:   cancel,
+		parent:   c,
+		session:  sess,
+		outputCh: outputCh,
 	}, nil
 }
 
-// TODO use it to make api easier
-// func (c *ChatContext) ReceiveChannel() <-chan string {
-// 	return c.receiveCh
-// }
-
-// func (c *ChatContext) OutputChannel() chan<- message.Message {
-// 	return c.outputCh
-// }
-
-// func (c *ChatContext) SendInput(input string) {
-// 	c.receiveCh <- input
-// }
-
-// func (c *ChatContext) SendOutput(msg message.Message) {
-// 	c.outputCh <- msg
-// }
-
 type Context struct {
-	ctx     context.Context
-	cancel  context.CancelFunc
-	session *session.Session
-	parent  *ChatContext
+	ctx      context.Context
+	cancel   context.CancelFunc
+	session  *Session
+	parent   *ChatContext
+	outputCh chan<- message.Message
 }
 
 func (c *Context) Context() context.Context {
@@ -143,6 +123,15 @@ func (c *Context) IsActive() bool {
 	}
 }
 
-func (c *Context) Session() *session.Session {
+func (c *Context) Session() *Session {
 	return c.session
+}
+
+func (c *Context) SessionState(state SessionState) {
+	c.session.State = state
+}
+
+func (c *Context) SendOutput(msg *message.Message) {
+	c.parent.sessionAdapter.Save(c.Context(), c.session)
+	c.outputCh <- *msg
 }

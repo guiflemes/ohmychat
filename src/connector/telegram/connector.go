@@ -2,13 +2,12 @@ package telegram
 
 import (
 	"fmt"
-	"oh-my-chat/src/context"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
-	"oh-my-chat/src/connector"
+	"oh-my-chat/src/core"
 	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/utils"
@@ -18,11 +17,11 @@ type telegram struct {
 	client *tgbotapi.BotAPI
 }
 
-func NewTelegramConnector(client *tgbotapi.BotAPI) connector.Connector {
+func NewTelegramConnector(client *tgbotapi.BotAPI) core.Connector {
 	return &telegram{client: client}
 }
 
-func (t *telegram) Acquire(ctx *context.ChatContext, input chan<- message.Message) {
+func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

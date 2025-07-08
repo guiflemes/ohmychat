@@ -3,12 +3,10 @@ package core
 import (
 	"log"
 	"oh-my-chat/src/message"
-
-	"oh-my-chat/src/context"
 )
 
 type Engine interface {
-	HandleMessage(*context.Context, *message.Message, chan<- message.Message)
+	HandleMessage(*Context, *message.Message)
 }
 
 type processor struct {
@@ -22,7 +20,7 @@ func NewProcessor(engine Engine) *processor {
 }
 
 func (p *processor) Process(
-	ctx *context.ChatContext,
+	ctx *ChatContext,
 	inputMsg <-chan message.Message,
 	outputMsg chan<- message.Message,
 ) {
@@ -33,11 +31,11 @@ func (p *processor) Process(
 				return
 			}
 			go func(m message.Message) {
-				childCtx, err := ctx.NewChildContext(m)
+				childCtx, err := ctx.NewChildContext(m, outputMsg)
 				if err != nil {
 					log.Printf("error creating childCtx for session %s", m.User.ID)
 				}
-				p.engine.HandleMessage(childCtx, &m, outputMsg)
+				p.engine.HandleMessage(childCtx, &m)
 				childCtx.Cancel()
 			}(msg)
 
