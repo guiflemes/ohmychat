@@ -127,7 +127,7 @@ func (c *Context) Session() *Session {
 	return c.session
 }
 
-func (c *Context) SessionState(state SessionState) {
+func (c *Context) SetSessionState(state SessionState) {
 	c.session.State = state
 }
 

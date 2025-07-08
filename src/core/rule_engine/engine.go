@@ -67,7 +67,7 @@ func (e *RuleEngine) handleIdleState(ctx *core.Context, msg *message.Message) {
 		return
 	}
 
-	ctx.Session().State = rule.NextState
+	ctx.SetSessionState(rule.NextState)
 	rule.Action(ctx, msg)
 
 }
@@ -89,7 +89,7 @@ func (e *RuleEngine) handleWaitingChoiceState(ctx *core.Context, msg *message.Me
 		return
 	}
 
-	ctx.Session().State = core.IdleState{}
+	ctx.SetSessionState(core.IdleState{})
 	handler(ctx, msg)
 
 }

@@ -17,7 +17,7 @@ func WithValidation(
 			ctx.SendOutput(msg)
 			return
 		}
-		ctx.Session().State = IdleState{}
+		ctx.SetSessionState(IdleState{})
 		action(ctx, msg)
 	}
 }
