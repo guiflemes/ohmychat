@@ -1,3 +1,4 @@
+//go:generate mockgen -source connector.go -destination ./mocks/connector.go -package mocks
 package core
 
 import (

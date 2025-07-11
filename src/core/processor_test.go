@@ -1,75 +1,77 @@
-package core
+package core_test
 
 import (
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
-
+	"oh-my-chat/src/core"
+	"oh-my-chat/src/core/mocks"
 	"oh-my-chat/src/message"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
-type FakeEgine1 struct {
-	engineName string
-}
+func TestProcessor_Process(t *testing.T) {
+	t.Parallel()
 
-func (f *FakeEgine1) HandleMessage(ctx *Context, input *message.Message) {
-	input.Output = "message processed"
-	ctx.SendOutput(input)
-}
-func (f *FakeEgine1) Config(channelName string) error { return nil }
-func (f *FakeEgine1) IsReady() bool                   { return true }
+	t.Run("sucessfully", func(t *testing.T) {
+		t.Parallel()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-type FakeChatBotGetter struct{}
+		mockEngine := mocks.NewMockEngine(ctrl)
 
-type Status int
+		mockEngine.EXPECT().HandleMessage(gomock.Any(), gomock.Any()).Times(1)
 
-const (
-	Processed Status = iota
-	ChatNotFound
-	EngineNotFound
-)
+		proc := core.NewProcessor(mockEngine)
 
-func TestProcess(t *testing.T) {
+		input := make(chan message.Message, 1)
+		output := make(chan message.Message, 1)
 
-	assert := assert.New(t)
+		msg := message.Message{
+			User: message.User{ID: "user123"},
+		}
 
-	type testCase struct {
-		desc       string
-		status     Status
-		engineName string
-		botName    string
-	}
+		ctx := core.NewChatContext()
 
-	for _, scenario := range []testCase{
-		{desc: "all ok", status: Processed, engineName: "engine_test", botName: "bot_test"},
-		{desc: "chat not found", status: ChatNotFound, engineName: "engine_test", botName: "chat_error"},
-		{desc: "engine not found", status: EngineNotFound, engineName: "engine error", botName: "bot_test"},
-	} {
-		t.Run(scenario.desc, func(t *testing.T) {
+		input <- msg
 
-			inputMsg := make(chan message.Message, 1)
-			outputMsg := make(chan message.Message, 1)
-			engine := &FakeEgine1{engineName: scenario.engineName}
-			processor := NewProcessor(engine)
-			ctx := NewChatContext()
-			defer ctx.Shutdown()
-			go processor.Process(ctx, inputMsg, outputMsg)
-			inputMsg <- message.Message{ID: "123", Input: "hello world", BotName: scenario.botName}
+		go proc.Process(ctx, input, output)
 
-			result := <-outputMsg
-			assert.Equal(result.ID, "123")
+		time.Sleep(100 * time.Millisecond)
+		ctx.Shutdown()
 
-			switch scenario.status {
-			case Processed:
-				assert.Equal(result.Output, "message processed")
-			case ChatNotFound:
-				assert.Equal(result.Output, "some error has ocurred")
-				assert.Equal(result.Error, "chat not found")
-			case EngineNotFound:
-				assert.Equal(result.Output, "some error has ocurred")
-				assert.Equal(result.Error, "engine not found")
-			}
-		})
-	}
+	})
 
+	t.Run("skip handling message, session adapter error", func(t *testing.T) {
+		t.Parallel()
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockEngine := mocks.NewMockEngine(ctrl)
+		mockSessionAdapter := mocks.NewMockSessionAdapter(ctrl)
+
+		mockEngine.EXPECT().HandleMessage(gomock.Any(), gomock.Any()).Times(0)
+		mockSessionAdapter.EXPECT().GetOrCreate(gomock.Any(), "user123").Return(nil, assert.AnError).Times(1)
+
+		proc := core.NewProcessor(mockEngine)
+
+		input := make(chan message.Message, 1)
+		output := make(chan message.Message, 1)
+
+		msg := message.Message{
+			User: message.User{ID: "user123"},
+		}
+
+		ctx := core.NewChatContext(core.WithSessionAdapter(mockSessionAdapter))
+
+		input <- msg
+
+		go proc.Process(ctx, input, output)
+
+		time.Sleep(100 * time.Millisecond)
+		ctx.Shutdown()
+
+	})
 }

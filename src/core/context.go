@@ -1,9 +1,14 @@
+//go:generate mockgen -source context.go -destination ./mocks/context.go -package mocks
 package core
 
 import (
 	"context"
 	"oh-my-chat/src/message"
 	"time"
+)
+
+const (
+	ReplyDispatched = 1 << 0
 )
 
 type SessionAdapter interface {
@@ -22,7 +27,6 @@ func WithSessionAdapter(adapater SessionAdapter) ChatContextOption {
 type ChatContext struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
-	workflow       string
 	metadata       map[string]any
 	shutdownCh     chan struct{}
 	sessionAdapter SessionAdapter
@@ -47,6 +51,11 @@ func NewChatContext(options ...ChatContextOption) *ChatContext {
 	}
 
 	return chatCtx
+}
+
+func (c *ChatContext) SaveSession(ctx context.Context, session *Session) error {
+	session.LastActivityAt = time.Now()
+	return c.sessionAdapter.Save(ctx, session)
 }
 
 func (c *ChatContext) Context() context.Context {
@@ -90,20 +99,22 @@ func (c *ChatContext) NewChildContext(msg message.Message, outputCh chan<- messa
 	}
 
 	return &Context{
-		ctx:      ctx,
-		cancel:   cancel,
-		parent:   c,
-		session:  sess,
-		outputCh: outputCh,
+		ctx:             ctx,
+		cancel:          cancel,
+		parent:          c,
+		session:         sess,
+		outputCh:        outputCh,
+		replyDispatched: ReplyDispatched,
 	}, nil
 }
 
 type Context struct {
-	ctx      context.Context
-	cancel   context.CancelFunc
-	session  *Session
-	parent   *ChatContext
-	outputCh chan<- message.Message
+	ctx             context.Context
+	cancel          context.CancelFunc
+	session         *Session
+	parent          *ChatContext
+	outputCh        chan<- message.Message
+	replyDispatched uint8
 }
 
 func (c *Context) Context() context.Context {
@@ -131,7 +142,12 @@ func (c *Context) SetSessionState(state SessionState) {
 	c.session.State = state
 }
 
+func (c *Context) MessageHasBeenReplyed() bool {
+	return c.replyDispatched != 0
+}
+
 func (c *Context) SendOutput(msg *message.Message) {
-	c.parent.sessionAdapter.Save(c.Context(), c.session)
+	c.parent.SaveSession(c.Context(), c.session)
+	c.replyDispatched |= ReplyDispatched
 	c.outputCh <- *msg
 }

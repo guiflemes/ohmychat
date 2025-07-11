@@ -1,68 +1,95 @@
-package core
+package core_test
 
-// import (
-// 	"context"
-// 	"testing"
+import (
+	"testing"
+	"time"
 
-// 	"github.com/stretchr/testify/suite"
+	"oh-my-chat/src/core"
+	"oh-my-chat/src/core/mocks"
+	"oh-my-chat/src/message"
 
-// 	"oh-my-chat/src/message"
-// )
+	"github.com/golang/mock/gomock"
+)
 
-// type FakeConnector struct {
-// 	dispatchCh chan message.Message
-// 	output     *message.Message
-// 	done       chan struct{}
-// }
+func TestMultiChannelConnector(t *testing.T) {
+	t.Parallel()
 
-// func (f *FakeConnector) Acquire(ctx context.Context, input chan<- message.Message) {
-// 	input <- message.Message{Input: "Hello test"}
-// }
-// func (f *FakeConnector) Dispatch(output message.Message) {
-// 	f.output.Output = output.Input + " Output"
-// 	f.done <- struct{}{}
-// }
+	t.Run("calls Acquire on connector when Request is invoked", func(t *testing.T) {
+		t.Parallel()
 
-// type MultiChannelConnectorSuite struct {
-// 	suite.Suite
-// 	multiChannelConnector *multiChannelConnector
-// 	output                *message.Message
-// 	done                  chan struct{}
-// }
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-// func (m *MultiChannelConnectorSuite) SetupTest() {
-// 	m.output = &message.Message{}
-// 	m.done = make(chan struct{})
-// 	m.multiChannelConnector = &multiChannelConnector{
-// 		connector: &FakeConnector{output: m.output, done: m.done},
-// 	}
-// }
+		mockConnector := mocks.NewMockConnector(ctrl)
+		chatCtx := core.NewChatContext()
+		input := make(chan message.Message)
 
-// func (m *MultiChannelConnectorSuite) TestRequest() {
-// 	context, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-// 	input := make(chan message.Message, 1)
-// 	go m.multiChannelConnector.Request(context, input)
+		mockConnector.EXPECT().
+			Acquire(chatCtx, input).
+			Times(1)
 
-// 	r := <-input
-// 	m.Equal(r.Input, "Hello test")
+		mc := core.NewMuitiChannelConnector(mockConnector)
+		mc.Request(chatCtx, input)
+	})
 
-// 	close(input)
+	t.Run("dispatches messages from output channel", func(t *testing.T) {
+		t.Parallel()
 
-// }
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-// func (m *MultiChannelConnectorSuite) TestResponse() {
-// 	output := make(chan message.Message, 1)
-// 	defer close(output)
-// 	ctx, cancel := context.WithCancel(context.Background())
+		mockConnector := mocks.NewMockConnector(ctrl)
+		chatCtx := core.NewChatContext()
+		defer chatCtx.Shutdown()
 
-// 	go m.multiChannelConnector.Response(ctx, output)
-// 	output <- message.Message{Input: "Hello"}
-// 	<-m.done
-// 	m.Equal(m.output.Output, "Hello Output")
-// 	cancel()
-// }
+		output := make(chan message.Message, 2)
 
-// func TestMultiChannelConnectorSuite(t *testing.T) {
-// 	suite.Run(t, new(MultiChannelConnectorSuite))
-// }
+		msg1 := message.Message{User: message.User{ID: "a"}, Input: "Hello"}
+		msg2 := message.Message{User: message.User{ID: "b"}, Input: "World"}
+
+		mockConnector.EXPECT().
+			Dispatch(msg1).
+			Times(1)
+
+		mockConnector.EXPECT().
+			Dispatch(msg2).
+			Times(1)
+
+		mc := core.NewMuitiChannelConnector(mockConnector)
+
+		output <- msg1
+		output <- msg2
+		close(output)
+
+		mc.Response(chatCtx, output)
+	})
+
+	t.Run("stops dispatching when context is done", func(t *testing.T) {
+		t.Parallel()
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockConnector := mocks.NewMockConnector(ctrl)
+		chatCtx := core.NewChatContext()
+
+		output := make(chan message.Message)
+
+		mc := core.NewMuitiChannelConnector(mockConnector)
+
+		chatCtx.Shutdown()
+
+		done := make(chan struct{})
+
+		go func() {
+			mc.Response(chatCtx, output)
+			close(done)
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(100 * time.Millisecond):
+			t.Error("Response did not return after context shutdown")
+		}
+	})
+}

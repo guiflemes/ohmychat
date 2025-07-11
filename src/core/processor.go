@@ -1,3 +1,4 @@
+//go:generate mockgen -source processor.go -destination ./mocks/processor.go -package mocks
 package core
 
 import (
@@ -34,8 +35,15 @@ func (p *processor) Process(
 				childCtx, err := ctx.NewChildContext(m, outputMsg)
 				if err != nil {
 					log.Printf("error creating childCtx for session %s", m.User.ID)
+					return
 				}
+
 				p.engine.HandleMessage(childCtx, &m)
+
+				if !childCtx.MessageHasBeenReplyed() {
+					ctx.SaveSession(childCtx.Context(), childCtx.Session())
+				}
+
 				childCtx.Cancel()
 			}(msg)
 

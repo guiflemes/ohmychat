@@ -24,6 +24,8 @@ func main() {
 			},
 			NextState: core.WaitingInputState{
 				PromptEmptyMessage: "Por favor, informe o número do pedido.",
+				PromptExit:         "solicitação de pedido cancelado",
+				ExitInput:          "sair",
 				Action: core.WithValidation(
 					func(input string) bool {
 						match, _ := regexp.MatchString(`^PD:\s?\d{9}$`, input)
