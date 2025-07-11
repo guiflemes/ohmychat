@@ -2,6 +2,10 @@ package utils
 
 import "context"
 
+func PtrOf[T any](v T) *T {
+	return &v
+}
+
 func Filter[T any](values []T, fn func(T) bool) []T {
 	result := make([]T, 0)
 	for _, value := range values {
@@ -11,16 +15,6 @@ func Filter[T any](values []T, fn func(T) bool) []T {
 	}
 
 	return result
-}
-
-// checks if any element in the slice satisfies the given filter function.
-func Any[T any](values []T, fn func(T) bool) bool {
-	for _, value := range values {
-		if fn(value) {
-			return true
-		}
-	}
-	return false
 }
 
 func Map[T any, U any](original []T, fn func(T) U) []U {

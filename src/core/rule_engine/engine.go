@@ -1,9 +1,12 @@
+//go:generate mockgen -source engine.go -destination ./mocks/engine.go -package mocks
 package rule_engine
 
 import (
 	"oh-my-chat/src/core"
 	"oh-my-chat/src/message"
+	"oh-my-chat/src/utils"
 	"strings"
+	"time"
 )
 
 type Rule struct {
@@ -21,9 +24,16 @@ func WithMatcher(m MatcherFunc) RuleEngineOption {
 	}
 }
 
+func WithSessionExpiresAt(s time.Duration) RuleEngineOption {
+	return func(engine *RuleEngine) {
+		engine.sessionExpiresAt = utils.PtrOf(s)
+	}
+}
+
 type RuleEngine struct {
-	matcher MatcherFunc
-	rules   []Rule
+	matcher          MatcherFunc
+	rules            []Rule
+	sessionExpiresAt *time.Duration
 }
 
 func NewRuleEngine(opts ...RuleEngineOption) *RuleEngine {
@@ -37,6 +47,10 @@ func NewRuleEngine(opts ...RuleEngineOption) *RuleEngine {
 		engine.matcher = DefaultMatcher
 	}
 
+	if engine.sessionExpiresAt == nil {
+		engine.sessionExpiresAt = utils.PtrOf(core.SessionExpiresAt)
+	}
+
 	return engine
 }
 
@@ -46,6 +60,10 @@ func (e *RuleEngine) RegisterRule(rule ...Rule) {
 
 func (e *RuleEngine) HandleMessage(ctx *core.Context, msg *message.Message) {
 	sess := ctx.Session()
+
+	if sess.IsExpired(*e.sessionExpiresAt) {
+		sess.State = core.IdleState{}
+	}
 
 	switch state := sess.State.(type) {
 	case core.IdleState:
@@ -78,13 +96,19 @@ func (e *RuleEngine) handleWaitingInputState(ctx *core.Context, msg *message.Mes
 		ctx.SendOutput(msg)
 		return
 	}
+	if msg.Input == state.ExitInput {
+		ctx.SetSessionState(core.IdleState{})
+		msg.Output = state.PromptExit
+		ctx.SendOutput(msg)
+		return
+	}
 	state.Action(ctx, msg)
 }
 
 func (e *RuleEngine) handleWaitingChoiceState(ctx *core.Context, msg *message.Message, state core.WaitingChoiceState) {
 	handler, ok := state.Choices[msg.Input]
 	if !ok {
-		msg.Output = "Opção inválida. " + state.Prompt
+		msg.Output = state.PromptInvalidOption
 		ctx.SendOutput(msg)
 		return
 	}

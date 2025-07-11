@@ -3,12 +3,20 @@ package core
 import (
 	"context"
 	"sync"
+	"time"
 )
 
+const SessionExpiresAt = time.Duration(5) * time.Minute
+
 type Session struct {
-	UserID string
-	State  SessionState
-	Memory map[string]any
+	UserID         string
+	State          SessionState
+	Memory         map[string]any
+	LastActivityAt time.Time
+}
+
+func (s *Session) IsExpired(timeout time.Duration) bool {
+	return time.Since(s.LastActivityAt) > timeout
 }
 
 type InMemorySessionRepo struct {
@@ -29,7 +37,7 @@ func (r *InMemorySessionRepo) GetOrCreate(_ context.Context, id string) (*Sessio
 	if s, ok := r.store[id]; ok {
 		return s, nil
 	}
-	s := &Session{UserID: id, State: IdleState{}, Memory: make(map[string]any)}
+	s := &Session{UserID: id, State: IdleState{}, Memory: make(map[string]any), LastActivityAt: time.Now()}
 	r.store[id] = s
 	return s, nil
 }
