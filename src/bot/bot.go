@@ -2,14 +2,11 @@ package bot
 
 import (
 	"oh-my-chat/src/core"
-	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"go.uber.org/zap"
 )
 
 type Bot struct {
@@ -29,10 +26,8 @@ func (b *Bot) Run(engine core.Engine) {
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
 
-	//TODO  when cli connector is running, the cancelation never comes here, find a way out to fix it
 	go func() {
-		sig := <-sign
-		logger.Logger.Info("Received signal, stopping", zap.String("signal", sig.String()))
+		<-sign
 		chatCtx.Shutdown()
 	}()
 

@@ -1,14 +1,12 @@
 package telegram
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"go.uber.org/zap"
 
 	"oh-my-chat/src/core"
-	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 	"oh-my-chat/src/utils"
 )
@@ -28,15 +26,9 @@ func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) 
 
 	user, err := t.client.GetMe()
 	if err != nil {
-		logger.Logger.Error(
-			"failed to initialize telegram client",
-			zap.Error(err),
-			zap.String("context", "telegram_client"),
-		)
+		log.Print("telegram: impossible to get me")
 		return
 	}
-
-	fmt.Println("botuser", user) // TODO -> put on metadata
 
 	updates := t.client.GetUpdatesChan(u)
 
@@ -76,34 +68,24 @@ func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) 
 			input <- msg
 
 		case <-ctx.Done():
-			logger.Logger.Info(
-				"context cancelled, stopping Acquire",
-				zap.String("context", "telegram_client"),
-			)
 			return
 		}
 
 	}
 }
 func (t *telegram) Dispatch(message message.Message) {
-	chatID, error := strconv.ParseInt(message.ChannelID, 10, 64)
-	if error != nil {
-		logger.Logger.Error(
-			"unable to retrieve chat",
-			zap.Error(error),
-			zap.Int64("chat_id", chatID),
-			zap.String("context", "telegram_client"),
-		)
+	chatID, err := strconv.ParseInt(message.ChannelID, 10, 64)
+	if err != nil {
+		log.Printf("telegram: error parsing chat_id | %s", err)
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chatID, message.Output)
 	t.formatResponse(&msg, message)
 
-	_, err := t.client.Send(msg)
+	_, err = t.client.Send(msg)
 	if err != nil {
-		logger.Logger.Error("unable to send message", zap.Error(err),
-			zap.String("context", "telegram_client"))
+		log.Printf("telegram: error sending message '%s' | %s", message.ID, err)
 	}
 }
 
