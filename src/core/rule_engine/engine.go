@@ -123,10 +123,14 @@ func (e *RuleEngine) handleUnknownState(ctx *core.Context, msg *message.Message)
 	ctx.SendOutput(msg)
 }
 
+func matchInsensitiveContains(input, pattern string) bool {
+	return strings.Contains(strings.ToLower(input), strings.ToLower(pattern))
+}
+
 func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
 	for _, rule := range rules {
 		for _, pattern := range rule.Prompts {
-			if strings.Contains(strings.ToLower(input), strings.ToLower(pattern)) {
+			if matchInsensitiveContains(input, pattern) {
 				return rule, true
 			}
 		}
