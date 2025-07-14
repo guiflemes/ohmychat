@@ -6,30 +6,55 @@ import (
 )
 
 type Connector interface {
-	Acquire(ctx *ChatContext, input chan<- message.Message)
-	Dispatch(message message.Message)
+	Acquire(ctx *ChatContext, input chan<- message.Message) error
+	Dispatch(message message.Message) error
+}
+
+type ConnectorConfig struct {
+	ResponseMaxPool uint8
 }
 
 type multiChannelConnector struct {
+	config    ConnectorConfig
 	connector Connector
 }
 
 func NewMuitiChannelConnector(conn Connector) *multiChannelConnector {
-	return &multiChannelConnector{connector: conn}
+	return &multiChannelConnector{connector: conn, config: ConnectorConfig{ResponseMaxPool: 5}}
 }
 
-func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message) {
-	c.connector.Acquire(ctx, input)
+func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message, eventCh chan<- Event) {
+	err := c.connector.Acquire(ctx, input)
+	if err != nil {
+		event := NewEventError(err)
+		select {
+		case <-ctx.Done():
+			return
+		case eventCh <- event:
+		}
+	}
 }
 
-func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message) {
+func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message, eventCh chan<- Event) {
+	sem := make(chan struct{}, c.config.ResponseMaxPool)
 	for {
 		select {
 		case msg, ok := <-output:
 			if !ok {
 				return
 			}
-			c.connector.Dispatch(msg)
+			go func(m message.Message) {
+				sem <- struct{}{}
+				defer func() { <-sem }()
+				err := c.connector.Dispatch(msg)
+
+				event := NewEvent(msg)
+				if err != nil {
+					event.WithError(err)
+				}
+				eventCh <- *event
+
+			}(msg)
 		case <-ctx.Done():
 			return
 		}

@@ -79,8 +79,21 @@ func main() {
 	if err != nil {
 		log.Panicf("error starting telegram bot %s", err.Error())
 	}
-	chatBot := bot.Bot{Connector: telegram.NewTelegramConnector(tBot)}
+	chatBot := bot.NewOhMyChat(telegram.NewTelegramConnector(tBot), bot.WithEventCallback(logOnEvent))
 	log.Println("running telegram bot...")
 	chatBot.Run(engine)
 	log.Println("telegram bot finished")
+}
+
+func logOnEvent(event core.Event) {
+	switch event.Type {
+	case core.EventError:
+		if event.Msg != nil {
+			log.Printf("error on message '%s': %s", event.Msg.ID, event.Error.Error())
+			return
+		}
+		log.Printf("error: %s", event.Error.Error())
+	case core.EventSuccess:
+		log.Printf("success on message '%s'", event.Msg.ID)
+	}
 }

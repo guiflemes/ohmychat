@@ -2,21 +2,26 @@
 package core
 
 import (
-	"log"
 	"oh-my-chat/src/message"
 )
+
+type ProcessConfig struct {
+	MaxPool uint8
+}
 
 type Engine interface {
 	HandleMessage(*Context, *message.Message)
 }
 
 type processor struct {
+	config ProcessConfig
 	engine Engine
 }
 
 func NewProcessor(engine Engine) *processor {
 	return &processor{
 		engine: engine,
+		config: ProcessConfig{MaxPool: 5},
 	}
 }
 
@@ -24,7 +29,9 @@ func (p *processor) Process(
 	ctx *ChatContext,
 	inputMsg <-chan message.Message,
 	outputMsg chan<- message.Message,
+	eventCh chan<- Event,
 ) {
+	sem := make(chan struct{}, p.config.MaxPool)
 	for {
 		select {
 		case msg, ok := <-inputMsg:
@@ -32,16 +39,21 @@ func (p *processor) Process(
 				return
 			}
 			go func(m message.Message) {
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
 				childCtx, err := ctx.NewChildContext(m, outputMsg)
 				if err != nil {
-					log.Printf("error creating childCtx for session %s", m.User.ID)
+					eventCh <- NewEventErrorWithMessage(msg, err)
 					return
 				}
 
 				p.engine.HandleMessage(childCtx, &m)
 
 				if !childCtx.MessageHasBeenReplyed() {
-					ctx.SaveSession(childCtx.Context(), childCtx.Session())
+					if err = ctx.SaveSession(childCtx.Context(), childCtx.Session()); err != nil {
+						eventCh <- NewEventErrorWithMessage(msg, err)
+					}
 				}
 
 				childCtx.Cancel()

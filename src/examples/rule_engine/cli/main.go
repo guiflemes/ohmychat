@@ -71,6 +71,6 @@ func main() {
 		},
 	)
 
-	chatBot := bot.Bot{Connector: cli.NewCliConnector()}
+	chatBot := bot.NewOhMyChat(cli.NewCliConnector())
 	chatBot.Run(engine)
 }

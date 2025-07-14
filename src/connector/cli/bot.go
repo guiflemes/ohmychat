@@ -1,13 +1,12 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/abiosoft/ishell"
-
-	"oh-my-chat/src/logger"
 )
 
 type CliOption func(cli *CliBot)
@@ -177,18 +176,17 @@ func (bot *CliBot) StopReceivingUpdates() {
 	bot.shutdownChannel <- struct{}{}
 }
 
-func (bot *CliBot) SendMessage(message Message) {
+func (bot *CliBot) SendMessage(message Message) error {
 
 	if !bot.IsRunning() {
-		logger.Logger.Warn("message dit not send, shell ctx is nil")
-		return
+		return errors.New("Cli bot no running error")
 	}
 
 	if message.IsMultiChoice() {
 		bot.multiChoiceCh <- message
-		return
+		return nil
 	}
 
 	bot.outputCh <- message
-
+	return nil
 }
