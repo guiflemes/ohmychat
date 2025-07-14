@@ -13,7 +13,7 @@ import (
 
 type BotCli interface {
 	GetUpdateChanels() UpdateChannel
-	SendMessage(message Message)
+	SendMessage(message Message) error
 }
 
 type ChatControl struct {
@@ -32,7 +32,7 @@ func NewCliConnector(options ...CliOption) core.Connector {
 	return conn
 }
 
-func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) {
+func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
 	cli.control.ctx = ctx
 
 	updates := cli.bot.GetUpdateChanels()
@@ -41,7 +41,7 @@ func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Mes
 		select {
 		case <-ctx.Done():
 			fmt.Println("sutdown cli connector")
-			return
+			return nil
 		case update, ok := <-updates:
 			if !ok {
 				continue
@@ -65,7 +65,7 @@ func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Mes
 
 }
 
-func (cli *cliConnector) Dispatch(msg message.Message) {
+func (cli *cliConnector) Dispatch(msg message.Message) error {
 	resposeMsg := NewMessage(msg.Output)
 	resposeMsg.UnBlockByAction = msg.ActionDone
 
@@ -78,6 +78,5 @@ func (cli *cliConnector) Dispatch(msg message.Message) {
 	default:
 	}
 
-	cli.bot.SendMessage(resposeMsg)
-
+	return cli.bot.SendMessage(resposeMsg)
 }

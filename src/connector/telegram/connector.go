@@ -19,15 +19,14 @@ func NewTelegramConnector(client *tgbotapi.BotAPI) core.Connector {
 	return &telegram{client: client}
 }
 
-func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) {
+func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	user, err := t.client.GetMe()
 	if err != nil {
-		log.Print("telegram: impossible to get me")
-		return
+		return err
 	}
 
 	updates := t.client.GetUpdatesChan(u)
@@ -68,16 +67,16 @@ func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) 
 			input <- msg
 
 		case <-ctx.Done():
-			return
+			return nil
 		}
 
 	}
 }
-func (t *telegram) Dispatch(message message.Message) {
+func (t *telegram) Dispatch(message message.Message) error {
 	chatID, err := strconv.ParseInt(message.ChannelID, 10, 64)
 	if err != nil {
 		log.Printf("telegram: error parsing chat_id | %s", err)
-		return
+		return err
 	}
 
 	msg := tgbotapi.NewMessage(chatID, message.Output)
@@ -86,7 +85,9 @@ func (t *telegram) Dispatch(message message.Message) {
 	_, err = t.client.Send(msg)
 	if err != nil {
 		log.Printf("telegram: error sending message '%s' | %s", message.ID, err)
+		return err
 	}
+	return nil
 }
 
 func (t *telegram) formatResponse(responseMsg *tgbotapi.MessageConfig, msg message.Message) {

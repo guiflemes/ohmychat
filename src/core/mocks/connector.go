@@ -36,9 +36,11 @@ func (m *MockConnector) EXPECT() *MockConnectorMockRecorder {
 }
 
 // Acquire mocks base method.
-func (m *MockConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) {
+func (m *MockConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Acquire", ctx, input)
+	ret := m.ctrl.Call(m, "Acquire", ctx, input)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Acquire indicates an expected call of Acquire.
@@ -48,9 +50,11 @@ func (mr *MockConnectorMockRecorder) Acquire(ctx, input interface{}) *gomock.Cal
 }
 
 // Dispatch mocks base method.
-func (m *MockConnector) Dispatch(message message.Message) {
+func (m *MockConnector) Dispatch(message message.Message) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Dispatch", message)
+	ret := m.ctrl.Call(m, "Dispatch", message)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Dispatch indicates an expected call of Dispatch.

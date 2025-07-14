@@ -28,6 +28,7 @@ func TestProcessor_Process(t *testing.T) {
 
 		input := make(chan message.Message, 1)
 		output := make(chan message.Message, 1)
+		event := make(chan core.Event, 1)
 
 		msg := message.Message{
 			User: message.User{ID: "user123"},
@@ -37,10 +38,12 @@ func TestProcessor_Process(t *testing.T) {
 
 		input <- msg
 
-		go proc.Process(ctx, input, output)
+		go proc.Process(ctx, input, output, event)
 
 		time.Sleep(100 * time.Millisecond)
+
 		ctx.Shutdown()
+		close(event)
 
 	})
 
@@ -59,6 +62,7 @@ func TestProcessor_Process(t *testing.T) {
 
 		input := make(chan message.Message, 1)
 		output := make(chan message.Message, 1)
+		event := make(chan core.Event, 1)
 
 		msg := message.Message{
 			User: message.User{ID: "user123"},
@@ -68,9 +72,16 @@ func TestProcessor_Process(t *testing.T) {
 
 		input <- msg
 
-		go proc.Process(ctx, input, output)
+		go proc.Process(ctx, input, output, event)
 
-		time.Sleep(100 * time.Millisecond)
+		select {
+		case evt := <-event:
+			assert.Error(t, evt.Error)
+			assert.Equal(t, "user123", evt.Msg.User.ID)
+			assert.ErrorIs(t, assert.AnError, evt.Error)
+		case <-time.After(200 * time.Millisecond):
+			t.Fatal("expected event, but none was received")
+		}
 		ctx.Shutdown()
 
 	})
