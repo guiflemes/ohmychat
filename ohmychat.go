@@ -82,3 +82,5 @@ func (b *ohMyChat) Run(engine core.Engine) {
 	wg.Wait()
 
 }
+
+type Message = message.Message
