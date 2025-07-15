@@ -3,10 +3,8 @@ package guidedengine
 import (
 	"fmt"
 
-	"go.uber.org/zap"
 	"golang.org/x/net/context"
 
-	"oh-my-chat/src/logger"
 	"oh-my-chat/src/message"
 )
 
@@ -246,11 +244,6 @@ func (e *guidedResponseEngine) route() {
 	}
 
 	if e.chatRouting == KeepContext || e.chatRouting == HumanHandOff {
-		logger.Logger.Warn(
-			"routing not implemented, setting default 'Fallback'",
-			zap.String("context", "guided_engine"),
-			zap.Int("routing", int(e.chatRouting)),
-		)
 		e.node = e.tree.Root()
 	}
 
@@ -284,7 +277,6 @@ func (e *guidedResponseEngine) Name() string {
 func (e *guidedResponseEngine) HandleMessage(ctx context.Context, input message.Message, output chan<- message.Message) {
 
 	if !e.setup {
-		logger.Logger.Error("engine is not ready", zap.String("context", "guided_engine"))
 		response := &input
 		response.Output = "some error ocurred, please contant admin"
 		output <- *response

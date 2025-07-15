@@ -23,9 +23,9 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
-		input := make(chan message.Message)
 		event := make(chan core.Event)
+		chatCtx := core.NewChatContext(event)
+		input := make(chan message.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
@@ -33,7 +33,7 @@ func TestMultiChannelConnector(t *testing.T) {
 			Times(1)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
-		mc.Request(chatCtx, input, event)
+		mc.Request(chatCtx, input)
 	})
 
 	t.Run("calls Acquire on connector when Request is invoked with error", func(t *testing.T) {
@@ -43,9 +43,9 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
-		input := make(chan message.Message)
 		event := make(chan core.Event, 1)
+		chatCtx := core.NewChatContext(event)
+		input := make(chan message.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
@@ -53,7 +53,7 @@ func TestMultiChannelConnector(t *testing.T) {
 			Times(1)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
-		go mc.Request(chatCtx, input, event)
+		go mc.Request(chatCtx, input)
 
 		select {
 		case evt := <-event:
@@ -73,11 +73,11 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
+		event := make(chan core.Event, 2)
+		chatCtx := core.NewChatContext(event)
 		defer chatCtx.Shutdown()
 
 		output := make(chan message.Message, 2)
-		event := make(chan core.Event, 2)
 
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -107,7 +107,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		output <- msg2
 		close(output)
 
-		mc.Response(chatCtx, output, event)
+		mc.Response(chatCtx, output)
 
 		wg.Wait()
 	})
@@ -119,10 +119,11 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
+
+		event := make(chan core.Event)
+		chatCtx := core.NewChatContext(event)
 
 		output := make(chan message.Message)
-		event := make(chan core.Event)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
 
@@ -131,7 +132,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		done := make(chan struct{})
 
 		go func() {
-			mc.Response(chatCtx, output, event)
+			mc.Response(chatCtx, output)
 			close(done)
 		}()
 

@@ -53,7 +53,12 @@ func main() {
 			Prompts: []string{"quero um cao", "cachorro", "dog"},
 			Action: func(ctx *core.Context, msg *message.Message) {
 				msg.ResponseType = message.OptionResponse
-				msg.Options = []message.Option{{ID: "beagle", Name: "beagle"}, {ID: "pinscher", Name: "pinscher"}}
+				msg.Options = []message.Option{
+					{ID: "beagle", Name: "beagle"},
+					{ID: "pinscher", Name: "pinscher"},
+					{ID: "pastor", Name: "pastor"},
+					{ID: "pitbull", Name: "pitbull"},
+				}
 				ctx.SendOutput(msg)
 			},
 			NextState: core.WaitingChoiceState{
@@ -66,7 +71,10 @@ func main() {
 						msg.Output = "legal, o cão mais feroz do mundo"
 						ctx.SendOutput(msg)
 					},
-				},
+				}.BindMany(func(ctx *core.Context, msg *message.Message) {
+					msg.Output = fmt.Sprintf("nossa seu cão %s é tao sem graça", msg.Input)
+					ctx.SendOutput(msg)
+				}, "pastor", "pitbull"),
 			},
 		},
 	)

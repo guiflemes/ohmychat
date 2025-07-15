@@ -34,11 +34,11 @@ func TestProcessor_Process(t *testing.T) {
 			User: message.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext()
+		ctx := core.NewChatContext(event)
 
 		input <- msg
 
-		go proc.Process(ctx, input, output, event)
+		go proc.Process(ctx, input, output)
 
 		time.Sleep(100 * time.Millisecond)
 
@@ -68,11 +68,14 @@ func TestProcessor_Process(t *testing.T) {
 			User: message.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext(core.WithSessionAdapter(mockSessionAdapter))
+		ctx := core.NewChatContext(
+			event,
+			core.WithSessionAdapter(mockSessionAdapter),
+		)
 
 		input <- msg
 
-		go proc.Process(ctx, input, output, event)
+		go proc.Process(ctx, input, output)
 
 		select {
 		case evt := <-event:

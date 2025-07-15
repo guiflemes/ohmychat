@@ -40,12 +40,7 @@ func (b *ohMyChat) Run(engine core.Engine) {
 	outputMsg := make(chan message.Message, 10)
 	eventCh := make(chan core.Event, 10)
 
-	chatCtx := core.NewChatContext()
-
-	if b.eventHandler == nil {
-		panic("eventHandler cannot be null")
-	}
-
+	chatCtx := core.NewChatContext(eventCh)
 	processor := core.NewProcessor(engine)
 	connector := core.NewMuitiChannelConnector(b.Connector)
 
@@ -62,19 +57,19 @@ func (b *ohMyChat) Run(engine core.Engine) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processor.Process(chatCtx, inputMsg, outputMsg, eventCh)
+		processor.Process(chatCtx, inputMsg, outputMsg)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		connector.Request(chatCtx, inputMsg, eventCh)
+		connector.Request(chatCtx, inputMsg)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		connector.Response(chatCtx, outputMsg, eventCh)
+		connector.Response(chatCtx, outputMsg)
 	}()
 
 	wg.Add(1)

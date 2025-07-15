@@ -29,10 +29,11 @@ type ChatContext struct {
 	cancel         context.CancelFunc
 	metadata       map[string]any
 	shutdownCh     chan struct{}
+	eventCh        chan<- Event
 	sessionAdapter SessionAdapter
 }
 
-func NewChatContext(options ...ChatContextOption) *ChatContext {
+func NewChatContext(eventCh chan<- Event, options ...ChatContextOption) *ChatContext {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	chatCtx := &ChatContext{
@@ -40,6 +41,7 @@ func NewChatContext(options ...ChatContextOption) *ChatContext {
 		cancel:     cancel,
 		metadata:   make(map[string]any),
 		shutdownCh: make(chan struct{}),
+		eventCh:    eventCh,
 	}
 
 	for _, opt := range options {
@@ -53,9 +55,17 @@ func NewChatContext(options ...ChatContextOption) *ChatContext {
 	return chatCtx
 }
 
+func (c *ChatContext) SendEvent(event Event) {
+	c.eventCh <- event
+}
+
 func (c *ChatContext) SaveSession(ctx context.Context, session *Session) error {
 	session.LastActivityAt = time.Now()
-	return c.sessionAdapter.Save(ctx, session)
+	err := c.sessionAdapter.Save(ctx, session)
+	if err != nil {
+		c.SendEvent(NewEventError(err))
+	}
+	return err
 }
 
 func (c *ChatContext) Context() context.Context {

@@ -23,19 +23,14 @@ func NewMuitiChannelConnector(conn Connector) *multiChannelConnector {
 	return &multiChannelConnector{connector: conn, config: ConnectorConfig{ResponseMaxPool: 5}}
 }
 
-func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message, eventCh chan<- Event) {
+func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message) {
 	err := c.connector.Acquire(ctx, input)
 	if err != nil {
-		event := NewEventError(err)
-		select {
-		case <-ctx.Done():
-			return
-		case eventCh <- event:
-		}
+		ctx.SendEvent(NewEventError(err))
 	}
 }
 
-func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message, eventCh chan<- Event) {
+func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message) {
 	sem := make(chan struct{}, c.config.ResponseMaxPool)
 	for {
 		select {
@@ -52,7 +47,7 @@ func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message
 				if err != nil {
 					event.WithError(err)
 				}
-				eventCh <- *event
+				ctx.SendEvent(*event)
 
 			}(msg)
 		case <-ctx.Done():
