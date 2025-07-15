@@ -11,7 +11,7 @@ import (
 )
 
 type ohMyChat struct {
-	Connector    core.Connector
+	connector    core.Connector
 	eventHandler *core.EventHandler
 }
 
@@ -25,7 +25,7 @@ func WithEventCallback(cb func(core.Event)) OhMyChatOption {
 
 func NewOhMyChat(connector core.Connector, opts ...OhMyChatOption) *ohMyChat {
 	b := &ohMyChat{
-		Connector:    connector,
+		connector:    connector,
 		eventHandler: core.NewEventHandler(),
 	}
 
@@ -43,7 +43,7 @@ func (b *ohMyChat) Run(engine core.Engine) {
 
 	chatCtx := core.NewChatContext(eventCh)
 	processor := core.NewProcessor(engine)
-	connector := core.NewMuitiChannelConnector(b.Connector)
+	connector := core.NewMuitiChannelConnector(b.connector)
 
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
