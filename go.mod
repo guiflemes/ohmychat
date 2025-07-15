@@ -1,4 +1,4 @@
-module oh-my-chat
+module github.com/guiflemes/ohmychat
 
 go 1.23.0
 
