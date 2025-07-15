@@ -33,7 +33,7 @@ func TestMultiChannelConnector(t *testing.T) {
 			Times(1)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
-		mc.Request(chatCtx, input, event)
+		mc.Request(chatCtx, input)
 	})
 
 	t.Run("calls Acquire on connector when Request is invoked with error", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestMultiChannelConnector(t *testing.T) {
 			Times(1)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
-		go mc.Request(chatCtx, input, event)
+		go mc.Request(chatCtx, input)
 
 		select {
 		case evt := <-event:
@@ -107,7 +107,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		output <- msg2
 		close(output)
 
-		mc.Response(chatCtx, output, event)
+		mc.Response(chatCtx, output)
 
 		wg.Wait()
 	})
@@ -132,7 +132,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		done := make(chan struct{})
 
 		go func() {
-			mc.Response(chatCtx, output, event)
+			mc.Response(chatCtx, output)
 			close(done)
 		}()
 

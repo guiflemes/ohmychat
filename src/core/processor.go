@@ -29,7 +29,6 @@ func (p *processor) Process(
 	ctx *ChatContext,
 	inputMsg <-chan message.Message,
 	outputMsg chan<- message.Message,
-	eventCh chan<- Event,
 ) {
 	sem := make(chan struct{}, p.config.MaxPool)
 	for {
@@ -44,7 +43,7 @@ func (p *processor) Process(
 
 				childCtx, err := ctx.NewChildContext(m, outputMsg)
 				if err != nil {
-					eventCh <- NewEventErrorWithMessage(msg, err)
+					ctx.SendEvent(NewEventErrorWithMessage(msg, err))
 					return
 				}
 
@@ -52,7 +51,7 @@ func (p *processor) Process(
 
 				if !childCtx.MessageHasBeenReplyed() {
 					if err = ctx.SaveSession(childCtx.Context(), childCtx.Session()); err != nil {
-						eventCh <- NewEventErrorWithMessage(msg, err)
+						ctx.SendEvent(NewEventErrorWithMessage(msg, err))
 					}
 				}
 

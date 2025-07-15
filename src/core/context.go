@@ -55,11 +55,15 @@ func NewChatContext(eventCh chan<- Event, options ...ChatContextOption) *ChatCon
 	return chatCtx
 }
 
+func (c *ChatContext) SendEvent(event Event) {
+	c.eventCh <- event
+}
+
 func (c *ChatContext) SaveSession(ctx context.Context, session *Session) error {
 	session.LastActivityAt = time.Now()
 	err := c.sessionAdapter.Save(ctx, session)
 	if err != nil {
-		c.eventCh <- NewEventError(err)
+		c.SendEvent(NewEventError(err))
 	}
 	return err
 }

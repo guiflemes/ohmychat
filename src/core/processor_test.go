@@ -38,7 +38,7 @@ func TestProcessor_Process(t *testing.T) {
 
 		input <- msg
 
-		go proc.Process(ctx, input, output, event)
+		go proc.Process(ctx, input, output)
 
 		time.Sleep(100 * time.Millisecond)
 
@@ -75,7 +75,7 @@ func TestProcessor_Process(t *testing.T) {
 
 		input <- msg
 
-		go proc.Process(ctx, input, output, event)
+		go proc.Process(ctx, input, output)
 
 		select {
 		case evt := <-event:
