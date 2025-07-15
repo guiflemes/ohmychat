@@ -26,3 +26,10 @@ type WaitingChoiceState struct {
 func (WaitingChoiceState) IsState() {}
 
 type Choices map[string]ActionFunc
+
+func (c Choices) BindMany(action ActionFunc, options ...string) Choices {
+	for _, opt := range options {
+		c[opt] = action
+	}
+	return c
+}

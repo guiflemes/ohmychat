@@ -26,7 +26,10 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		msg := message.Message{Input: "rocksdxebec"}
 		output := make(chan message.Message, 1)
 
@@ -58,7 +61,10 @@ func TestRuleEngine(t *testing.T) {
 			},
 		}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
@@ -83,7 +89,10 @@ func TestRuleEngine(t *testing.T) {
 
 		msg := &message.Message{Input: " "}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
@@ -116,7 +125,10 @@ func TestRuleEngine(t *testing.T) {
 
 		msg := &message.Message{Input: "zoro"}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
@@ -145,7 +157,10 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 		msg := &message.Message{Input: "invalid_option"}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
@@ -177,7 +192,10 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		msg := &message.Message{Input: "1"}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
@@ -203,7 +221,10 @@ func TestRuleEngine(t *testing.T) {
 
 		msg := &message.Message{Input: "teste"}
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		output := make(chan message.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
@@ -229,7 +250,10 @@ func TestRuleEngine(t *testing.T) {
 		msg := &message.Message{Input: "Monkey D Garp"}
 		output := make(chan message.Message, 1)
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdpater))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdpater),
+		)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
 		engine := rule_engine.NewRuleEngine()

@@ -40,7 +40,7 @@ func (b *ohMyChat) Run(engine core.Engine) {
 	outputMsg := make(chan message.Message, 10)
 	eventCh := make(chan core.Event, 10)
 
-	chatCtx := core.NewChatContext()
+	chatCtx := core.NewChatContext(eventCh)
 
 	if b.eventHandler == nil {
 		panic("eventHandler cannot be null")

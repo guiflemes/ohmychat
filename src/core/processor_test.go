@@ -34,7 +34,7 @@ func TestProcessor_Process(t *testing.T) {
 			User: message.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext()
+		ctx := core.NewChatContext(event)
 
 		input <- msg
 
@@ -68,7 +68,10 @@ func TestProcessor_Process(t *testing.T) {
 			User: message.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext(core.WithSessionAdapter(mockSessionAdapter))
+		ctx := core.NewChatContext(
+			event,
+			core.WithSessionAdapter(mockSessionAdapter),
+		)
 
 		input <- msg
 

@@ -23,9 +23,9 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
-		input := make(chan message.Message)
 		event := make(chan core.Event)
+		chatCtx := core.NewChatContext(event)
+		input := make(chan message.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
@@ -43,9 +43,9 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
-		input := make(chan message.Message)
 		event := make(chan core.Event, 1)
+		chatCtx := core.NewChatContext(event)
+		input := make(chan message.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
@@ -73,11 +73,11 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
+		event := make(chan core.Event, 2)
+		chatCtx := core.NewChatContext(event)
 		defer chatCtx.Shutdown()
 
 		output := make(chan message.Message, 2)
-		event := make(chan core.Event, 2)
 
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -119,10 +119,11 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		chatCtx := core.NewChatContext()
+
+		event := make(chan core.Event)
+		chatCtx := core.NewChatContext(event)
 
 		output := make(chan message.Message)
-		event := make(chan core.Event)
 
 		mc := core.NewMuitiChannelConnector(mockConnector)
 

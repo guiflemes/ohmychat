@@ -18,7 +18,7 @@ func TestChatContextAndContext(t *testing.T) {
 	t.Run("creates context with default session adapter", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := core.NewChatContext()
+		ctx := core.NewChatContext(make(chan<- core.Event))
 		assert.True(t, ctx.IsActive())
 
 		ctx.Set("foo", "bar")
@@ -44,7 +44,10 @@ func TestChatContextAndContext(t *testing.T) {
 			Return(session, nil).
 			Times(1)
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdapter))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdapter),
+		)
 
 		msg := message.Message{User: message.User{ID: "abc"}}
 		output := make(chan message.Message, 1)
@@ -74,7 +77,10 @@ func TestChatContextAndContext(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		chatCtx := core.NewChatContext(core.WithSessionAdapter(mockAdapter))
+		chatCtx := core.NewChatContext(
+			make(chan<- core.Event),
+			core.WithSessionAdapter(mockAdapter),
+		)
 
 		msg := message.Message{User: message.User{ID: "kizaru"}}
 		output := make(chan message.Message, 1)
