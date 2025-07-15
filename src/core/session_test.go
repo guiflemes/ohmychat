@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"oh-my-chat/src/core"
+	"github.com/guiflemes/ohmychat/src/core"
 
 	"github.com/stretchr/testify/assert"
 )

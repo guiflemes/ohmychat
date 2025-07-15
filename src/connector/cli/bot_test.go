@@ -1,7 +1,7 @@
 package cli
 
 // import (
-// 	"oh-my-chat/src/bot"
+// 	"github.com/guiflemes/ohmychat/src/bot"
 // 	"testing"
 
 // 	"github.com/abiosoft/ishell"

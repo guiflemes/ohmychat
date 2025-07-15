@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/message"
 )
 
 type Action interface {

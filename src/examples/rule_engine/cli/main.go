@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"oh-my-chat/src/bot"
-	"oh-my-chat/src/core/rule_engine"
+	"github.com/guiflemes/ohmychat/src/bot"
+	"github.com/guiflemes/ohmychat/src/core/rule_engine"
 
-	"oh-my-chat/src/core"
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/core"
+	"github.com/guiflemes/ohmychat/src/message"
 
 	"regexp"
 
-	"oh-my-chat/src/connector/cli"
+	"github.com/guiflemes/ohmychat/src/connector/cli"
 )
 
 func main() {

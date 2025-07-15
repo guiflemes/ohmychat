@@ -6,7 +6,7 @@ package mocks
 
 import (
 	context "context"
-	core "oh-my-chat/src/core"
+	core "github.com/guiflemes/ohmychat/src/core"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"

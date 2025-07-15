@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
-	"oh-my-chat/src/bot"
-	"oh-my-chat/src/core/rule_engine"
+	"github.com/guiflemes/ohmychat/src/bot"
+	"github.com/guiflemes/ohmychat/src/core/rule_engine"
 
-	"oh-my-chat/src/core"
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/core"
+	"github.com/guiflemes/ohmychat/src/message"
 
 	"regexp"
 
-	"oh-my-chat/src/connector/telegram"
+	"github.com/guiflemes/ohmychat/src/connector/telegram"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

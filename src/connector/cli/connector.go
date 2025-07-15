@@ -5,10 +5,10 @@ import (
 
 	"github.com/abiosoft/ishell"
 
-	"oh-my-chat/src/message"
-	"oh-my-chat/src/utils"
+	"github.com/guiflemes/ohmychat/src/message"
+	"github.com/guiflemes/ohmychat/src/utils"
 
-	"oh-my-chat/src/core"
+	"github.com/guiflemes/ohmychat/src/core"
 )
 
 type BotCli interface {

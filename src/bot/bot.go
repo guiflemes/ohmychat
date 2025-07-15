@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"oh-my-chat/src/core"
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/core"
+	"github.com/guiflemes/ohmychat/src/message"
 	"os"
 	"os/signal"
 	"sync"

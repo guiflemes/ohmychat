@@ -7,10 +7,10 @@ package cli
 // 	"github.com/stretchr/testify/assert"
 // 	"github.com/stretchr/testify/mock"
 
-// 	"oh-my-chat/src/logger"
-// 	"oh-my-chat/src/message"
+// 	"github.com/guiflemes/ohmychat/src/logger"
+// 	"github.com/guiflemes/ohmychat/src/message"
 
-// 	"oh-my-chat/src/core"
+// 	"github.com/guiflemes/ohmychat/src/core"
 // )
 
 // func TestMain(m *testing.M) {

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"oh-my-chat/src/core"
-	"oh-my-chat/src/core/mocks"
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/core"
+	"github.com/guiflemes/ohmychat/src/core/mocks"
+	"github.com/guiflemes/ohmychat/src/message"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

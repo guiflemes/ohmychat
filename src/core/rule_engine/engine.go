@@ -2,9 +2,9 @@
 package rule_engine
 
 import (
-	"oh-my-chat/src/core"
-	"oh-my-chat/src/message"
-	"oh-my-chat/src/utils"
+	"github.com/guiflemes/ohmychat/src/core"
+	"github.com/guiflemes/ohmychat/src/message"
+	"github.com/guiflemes/ohmychat/src/utils"
 	"strings"
 	"time"
 )

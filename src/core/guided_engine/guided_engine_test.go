@@ -9,8 +9,8 @@ package guidedengine
 // 	"github.com/stretchr/testify/mock"
 // 	"github.com/stretchr/testify/suite"
 
-// 	"oh-my-chat/src/logger"
-// 	"oh-my-chat/src/message"
+// 	"github.com/guiflemes/ohmychat/src/logger"
+// 	"github.com/guiflemes/ohmychat/src/message"
 // )
 
 // func TestMain(m *testing.M) {

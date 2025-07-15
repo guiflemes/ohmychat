@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	core "oh-my-chat/src/core"
-	message "oh-my-chat/src/message"
+	core "github.com/guiflemes/ohmychat/src/core"
+	message "github.com/guiflemes/ohmychat/src/message"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"

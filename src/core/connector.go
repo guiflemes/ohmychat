@@ -2,7 +2,7 @@
 package core
 
 import (
-	"oh-my-chat/src/message"
+	"github.com/guiflemes/ohmychat/src/message"
 )
 
 type Connector interface {
