@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/guiflemes/ohmychat"
-	"github.com/guiflemes/ohmychat/core/rule_engine"
+	"github.com/guiflemes/ohmychat/engine/rule_engine"
 
 	"github.com/guiflemes/ohmychat/core"
 	"github.com/guiflemes/ohmychat/message"

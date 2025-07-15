@@ -6,7 +6,7 @@ import (
 
 	"github.com/guiflemes/ohmychat/core"
 	"github.com/guiflemes/ohmychat/core/mocks"
-	"github.com/guiflemes/ohmychat/core/rule_engine"
+	"github.com/guiflemes/ohmychat/engine/rule_engine"
 	"github.com/guiflemes/ohmychat/message"
 
 	"github.com/golang/mock/gomock"

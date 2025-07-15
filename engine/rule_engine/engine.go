@@ -2,11 +2,12 @@
 package rule_engine
 
 import (
+	"strings"
+	"time"
+
 	"github.com/guiflemes/ohmychat/core"
 	"github.com/guiflemes/ohmychat/message"
 	"github.com/guiflemes/ohmychat/utils"
-	"strings"
-	"time"
 )
 
 type Rule struct {
