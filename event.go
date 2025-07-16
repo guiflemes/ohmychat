@@ -1,7 +1,6 @@
-package core
+package ohmychat
 
 import (
-	"github.com/guiflemes/ohmychat/message"
 	"time"
 )
 
@@ -14,7 +13,7 @@ const (
 
 type Event struct {
 	Type  EventType
-	Msg   *message.Message
+	Msg   *Message
 	Error error
 	Time  time.Time
 }
@@ -26,7 +25,7 @@ func (e *Event) WithError(err error) {
 
 type OnEvent func(event Event)
 
-func NewEvent(msg message.Message) *Event {
+func NewEvent(msg Message) *Event {
 	return &Event{
 		Msg:  &msg,
 		Time: time.Now(),
@@ -41,7 +40,7 @@ func NewEventError(err error) Event {
 	}
 }
 
-func NewEventErrorWithMessage(msg message.Message, err error) Event {
+func NewEventErrorWithMessage(msg Message, err error) Event {
 	return Event{
 		Type:  EventError,
 		Msg:   &msg,
@@ -50,7 +49,7 @@ func NewEventErrorWithMessage(msg message.Message, err error) Event {
 	}
 }
 
-func NewEventSuccess(msg message.Message) Event {
+func NewEventSuccess(msg Message) Event {
 	return Event{
 		Type:  EventError,
 		Msg:   &msg,

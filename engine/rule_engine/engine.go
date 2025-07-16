@@ -5,15 +5,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat"
 	"github.com/guiflemes/ohmychat/utils"
 )
 
 type Rule struct {
 	Prompts   []string
-	Action    core.ActionFunc
-	NextState core.SessionState
+	Action    ohmychat.ActionFunc
+	NextState ohmychat.SessionState
 }
 
 type MatcherFunc func(rules []Rule, input string) (Rule, bool)
@@ -49,7 +48,7 @@ func NewRuleEngine(opts ...RuleEngineOption) *RuleEngine {
 	}
 
 	if engine.sessionExpiresAt == nil {
-		engine.sessionExpiresAt = utils.PtrOf(core.SessionExpiresAt)
+		engine.sessionExpiresAt = utils.PtrOf(ohmychat.SessionExpiresAt)
 	}
 
 	return engine
@@ -59,26 +58,26 @@ func (e *RuleEngine) RegisterRule(rule ...Rule) {
 	e.rules = append(e.rules, rule...)
 }
 
-func (e *RuleEngine) HandleMessage(ctx *core.Context, msg *message.Message) {
+func (e *RuleEngine) HandleMessage(ctx *ohmychat.Context, msg *ohmychat.Message) {
 	sess := ctx.Session()
 
 	if sess.IsExpired(*e.sessionExpiresAt) {
-		sess.State = core.IdleState{}
+		sess.State = ohmychat.IdleState{}
 	}
 
 	switch state := sess.State.(type) {
-	case core.IdleState:
+	case ohmychat.IdleState:
 		e.handleIdleState(ctx, msg)
-	case core.WaitingInputState:
+	case ohmychat.WaitingInputState:
 		e.handleWaitingInputState(ctx, msg, state)
-	case core.WaitingChoiceState:
+	case ohmychat.WaitingChoiceState:
 		e.handleWaitingChoiceState(ctx, msg, state)
 	default:
 		e.handleUnknownState(ctx, msg)
 	}
 }
 
-func (e *RuleEngine) handleIdleState(ctx *core.Context, msg *message.Message) {
+func (e *RuleEngine) handleIdleState(ctx *ohmychat.Context, msg *ohmychat.Message) {
 	rule, ok := e.matcher(e.rules, msg.Input)
 	if !ok {
 		msg.Output = "desculpe não entendi"
@@ -91,14 +90,14 @@ func (e *RuleEngine) handleIdleState(ctx *core.Context, msg *message.Message) {
 
 }
 
-func (e *RuleEngine) handleWaitingInputState(ctx *core.Context, msg *message.Message, state core.WaitingInputState) {
+func (e *RuleEngine) handleWaitingInputState(ctx *ohmychat.Context, msg *ohmychat.Message, state ohmychat.WaitingInputState) {
 	if strings.TrimSpace(msg.Input) == "" {
 		msg.Output = state.PromptEmptyMessage
 		ctx.SendOutput(msg)
 		return
 	}
 	if msg.Input == state.ExitInput {
-		ctx.SetSessionState(core.IdleState{})
+		ctx.SetSessionState(ohmychat.IdleState{})
 		msg.Output = state.PromptExit
 		ctx.SendOutput(msg)
 		return
@@ -106,7 +105,7 @@ func (e *RuleEngine) handleWaitingInputState(ctx *core.Context, msg *message.Mes
 	state.Action(ctx, msg)
 }
 
-func (e *RuleEngine) handleWaitingChoiceState(ctx *core.Context, msg *message.Message, state core.WaitingChoiceState) {
+func (e *RuleEngine) handleWaitingChoiceState(ctx *ohmychat.Context, msg *ohmychat.Message, state ohmychat.WaitingChoiceState) {
 	handler, ok := state.Choices[msg.Input]
 	if !ok {
 		msg.Output = state.PromptInvalidOption
@@ -114,12 +113,12 @@ func (e *RuleEngine) handleWaitingChoiceState(ctx *core.Context, msg *message.Me
 		return
 	}
 
-	ctx.SetSessionState(core.IdleState{})
+	ctx.SetSessionState(ohmychat.IdleState{})
 	handler(ctx, msg)
 
 }
 
-func (e *RuleEngine) handleUnknownState(ctx *core.Context, msg *message.Message) {
+func (e *RuleEngine) handleUnknownState(ctx *ohmychat.Context, msg *ohmychat.Message) {
 	msg.Output = "Erro interno: estado desconhecido."
 	ctx.SendOutput(msg)
 }

@@ -1,12 +1,11 @@
-package core_test
+package ohmychat_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/core/mocks"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat"
+	"github.com/guiflemes/ohmychat/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -24,17 +23,17 @@ func TestProcessor_Process(t *testing.T) {
 
 		mockEngine.EXPECT().HandleMessage(gomock.Any(), gomock.Any()).Times(1)
 
-		proc := core.NewProcessor(mockEngine)
+		proc := ohmychat.NewProcessor(mockEngine)
 
-		input := make(chan message.Message, 1)
-		output := make(chan message.Message, 1)
-		event := make(chan core.Event, 1)
+		input := make(chan ohmychat.Message, 1)
+		output := make(chan ohmychat.Message, 1)
+		event := make(chan ohmychat.Event, 1)
 
-		msg := message.Message{
-			User: message.User{ID: "user123"},
+		msg := ohmychat.Message{
+			User: ohmychat.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext(event)
+		ctx := ohmychat.NewChatContext(event)
 
 		input <- msg
 
@@ -58,19 +57,19 @@ func TestProcessor_Process(t *testing.T) {
 		mockEngine.EXPECT().HandleMessage(gomock.Any(), gomock.Any()).Times(0)
 		mockSessionAdapter.EXPECT().GetOrCreate(gomock.Any(), "user123").Return(nil, assert.AnError).Times(1)
 
-		proc := core.NewProcessor(mockEngine)
+		proc := ohmychat.NewProcessor(mockEngine)
 
-		input := make(chan message.Message, 1)
-		output := make(chan message.Message, 1)
-		event := make(chan core.Event, 1)
+		input := make(chan ohmychat.Message, 1)
+		output := make(chan ohmychat.Message, 1)
+		event := make(chan ohmychat.Event, 1)
 
-		msg := message.Message{
-			User: message.User{ID: "user123"},
+		msg := ohmychat.Message{
+			User: ohmychat.User{ID: "user123"},
 		}
 
-		ctx := core.NewChatContext(
+		ctx := ohmychat.NewChatContext(
 			event,
-			core.WithSessionAdapter(mockSessionAdapter),
+			ohmychat.WithSessionAdapter(mockSessionAdapter),
 		)
 
 		input <- msg

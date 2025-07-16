@@ -6,8 +6,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat"
 	"github.com/guiflemes/ohmychat/utils"
 )
 
@@ -15,11 +14,11 @@ type telegram struct {
 	client *tgbotapi.BotAPI
 }
 
-func NewTelegramConnector(client *tgbotapi.BotAPI) core.Connector {
+func NewTelegramConnector(client *tgbotapi.BotAPI) ohmychat.Connector {
 	return &telegram{client: client}
 }
 
-func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
+func (t *telegram) Acquire(ctx *ohmychat.ChatContext, input chan<- ohmychat.Message) error {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -54,12 +53,12 @@ func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) 
 				continue
 			}
 
-			msg := message.NewMessage()
-			msg.Type = message.MsgTypeUnknown
-			msg.Connector = message.Telegram
+			msg := ohmychat.NewMessage()
+			msg.Type = ohmychat.MsgTypeUnknown
+			msg.Connector = ohmychat.Telegram
 			msg.ConnectorID = strconv.Itoa(m.MessageID)
 			msg.Input = m.Text
-			msg.Service = message.MsgServiceChat
+			msg.Service = ohmychat.MsgServiceChat
 			msg.ChannelID = strconv.FormatInt(m.Chat.ID, 10)
 			msg.BotID = strconv.FormatInt(user.ID, 10)
 			msg.BotName = user.UserName
@@ -72,28 +71,28 @@ func (t *telegram) Acquire(ctx *core.ChatContext, input chan<- message.Message) 
 
 	}
 }
-func (t *telegram) Dispatch(message message.Message) error {
-	chatID, err := strconv.ParseInt(message.ChannelID, 10, 64)
+func (t *telegram) Dispatch(ohmychat ohmychat.Message) error {
+	chatID, err := strconv.ParseInt(ohmychat.ChannelID, 10, 64)
 	if err != nil {
 		log.Printf("telegram: error parsing chat_id | %s", err)
 		return err
 	}
 
-	msg := tgbotapi.NewMessage(chatID, message.Output)
-	t.formatResponse(&msg, message)
+	msg := tgbotapi.NewMessage(chatID, ohmychat.Output)
+	t.formatResponse(&msg, ohmychat)
 
 	_, err = t.client.Send(msg)
 	if err != nil {
-		log.Printf("telegram: error sending message '%s' | %s", message.ID, err)
+		log.Printf("telegram: error sending ohmychat '%s' | %s", ohmychat.ID, err)
 		return err
 	}
 	return nil
 }
 
-func (t *telegram) formatResponse(responseMsg *tgbotapi.MessageConfig, msg message.Message) {
+func (t *telegram) formatResponse(responseMsg *tgbotapi.MessageConfig, msg ohmychat.Message) {
 	switch msg.ResponseType {
-	case message.OptionResponse:
-		buttons := utils.Map(msg.Options, func(o message.Option) tgbotapi.InlineKeyboardButton {
+	case ohmychat.OptionResponse:
+		buttons := utils.Map(msg.Options, func(o ohmychat.Option) tgbotapi.InlineKeyboardButton {
 			return tgbotapi.NewInlineKeyboardButtonData(o.Name, o.ID)
 		})
 		keyboard := tgbotapi.NewInlineKeyboardMarkup(buttons)

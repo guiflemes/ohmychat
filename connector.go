@@ -1,13 +1,9 @@
 //go:generate mockgen -source connector.go -destination ./mocks/connector.go -package mocks
-package core
-
-import (
-	"github.com/guiflemes/ohmychat/message"
-)
+package ohmychat
 
 type Connector interface {
-	Acquire(ctx *ChatContext, input chan<- message.Message) error
-	Dispatch(message message.Message) error
+	Acquire(ctx *ChatContext, input chan<- Message) error
+	Dispatch(message Message) error
 }
 
 type ConnectorConfig struct {
@@ -23,14 +19,14 @@ func NewMuitiChannelConnector(conn Connector) *multiChannelConnector {
 	return &multiChannelConnector{connector: conn, config: ConnectorConfig{ResponseMaxPool: 5}}
 }
 
-func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- message.Message) {
+func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- Message) {
 	err := c.connector.Acquire(ctx, input)
 	if err != nil {
 		ctx.SendEvent(NewEventError(err))
 	}
 }
 
-func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message.Message) {
+func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan Message) {
 	sem := make(chan struct{}, c.config.ResponseMaxPool)
 	for {
 		select {
@@ -38,7 +34,7 @@ func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan message
 			if !ok {
 				return
 			}
-			go func(m message.Message) {
+			go func(m Message) {
 				sem <- struct{}{}
 				defer func() { <-sem }()
 				err := c.connector.Dispatch(msg)

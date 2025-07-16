@@ -1,13 +1,12 @@
-package core_test
+package ohmychat_test
 
 import (
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/core/mocks"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat"
+	"github.com/guiflemes/ohmychat/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -23,16 +22,16 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		event := make(chan core.Event)
-		chatCtx := core.NewChatContext(event)
-		input := make(chan message.Message)
+		event := make(chan ohmychat.Event)
+		chatCtx := ohmychat.NewChatContext(event)
+		input := make(chan ohmychat.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
 			Return(nil).
 			Times(1)
 
-		mc := core.NewMuitiChannelConnector(mockConnector)
+		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
 		mc.Request(chatCtx, input)
 	})
 
@@ -43,16 +42,16 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		event := make(chan core.Event, 1)
-		chatCtx := core.NewChatContext(event)
-		input := make(chan message.Message)
+		event := make(chan ohmychat.Event, 1)
+		chatCtx := ohmychat.NewChatContext(event)
+		input := make(chan ohmychat.Message)
 
 		mockConnector.EXPECT().
 			Acquire(chatCtx, input).
 			Return(assert.AnError).
 			Times(1)
 
-		mc := core.NewMuitiChannelConnector(mockConnector)
+		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
 		go mc.Request(chatCtx, input)
 
 		select {
@@ -73,11 +72,11 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockConnector := mocks.NewMockConnector(ctrl)
-		event := make(chan core.Event, 2)
-		chatCtx := core.NewChatContext(event)
+		event := make(chan ohmychat.Event, 2)
+		chatCtx := ohmychat.NewChatContext(event)
 		defer chatCtx.Shutdown()
 
-		output := make(chan message.Message, 2)
+		output := make(chan ohmychat.Message, 2)
 
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -88,8 +87,8 @@ func TestMultiChannelConnector(t *testing.T) {
 			close(event)
 		}()
 
-		msg1 := message.Message{User: message.User{ID: "a"}, Input: "Hello"}
-		msg2 := message.Message{User: message.User{ID: "b"}, Input: "World"}
+		msg1 := ohmychat.Message{User: ohmychat.User{ID: "a"}, Input: "Hello"}
+		msg2 := ohmychat.Message{User: ohmychat.User{ID: "b"}, Input: "World"}
 
 		mockConnector.EXPECT().
 			Dispatch(msg1).
@@ -101,7 +100,7 @@ func TestMultiChannelConnector(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		mc := core.NewMuitiChannelConnector(mockConnector)
+		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
 
 		output <- msg1
 		output <- msg2
@@ -120,12 +119,12 @@ func TestMultiChannelConnector(t *testing.T) {
 
 		mockConnector := mocks.NewMockConnector(ctrl)
 
-		event := make(chan core.Event)
-		chatCtx := core.NewChatContext(event)
+		event := make(chan ohmychat.Event)
+		chatCtx := ohmychat.NewChatContext(event)
 
-		output := make(chan message.Message)
+		output := make(chan ohmychat.Message)
 
-		mc := core.NewMuitiChannelConnector(mockConnector)
+		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
 
 		chatCtx.Shutdown()
 

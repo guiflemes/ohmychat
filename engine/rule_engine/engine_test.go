@@ -4,10 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/core/mocks"
+	"github.com/guiflemes/ohmychat"
 	"github.com/guiflemes/ohmychat/engine/rule_engine"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -21,17 +20,17 @@ func TestRuleEngine(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		ss := &core.Session{State: core.IdleState{}, LastActivityAt: time.Now()}
+		ss := &ohmychat.Session{State: ohmychat.IdleState{}, LastActivityAt: time.Now()}
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		msg := message.Message{Input: "rocksdxebec"}
-		output := make(chan message.Message, 1)
+		msg := ohmychat.Message{Input: "rocksdxebec"}
+		output := make(chan ohmychat.Message, 1)
 
 		childCtx, _ := chatCtx.NewChildContext(msg, output)
 		engine := rule_engine.NewRuleEngine()
@@ -48,24 +47,24 @@ func TestRuleEngine(t *testing.T) {
 
 		called := false
 
-		ss := &core.Session{State: core.IdleState{}, LastActivityAt: time.Now()}
+		ss := &ohmychat.Session{State: ohmychat.IdleState{}, LastActivityAt: time.Now()}
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
-		msg := &message.Message{Input: "hello"}
+		msg := &ohmychat.Message{Input: "hello"}
 
 		rule := rule_engine.Rule{
 			Prompts:   []string{"hello"},
-			NextState: core.IdleState{},
-			Action: func(ctx *core.Context, m *message.Message) {
+			NextState: ohmychat.IdleState{},
+			Action: func(ctx *ohmychat.Context, m *ohmychat.Message) {
 				called = true
 			},
 		}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
@@ -82,18 +81,18 @@ func TestRuleEngine(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		ss := &core.Session{State: core.WaitingInputState{PromptEmptyMessage: "akainu"}, LastActivityAt: time.Now()}
+		ss := &ohmychat.Session{State: ohmychat.WaitingInputState{PromptEmptyMessage: "akainu"}, LastActivityAt: time.Now()}
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
-		msg := &message.Message{Input: " "}
+		msg := &ohmychat.Message{Input: " "}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
@@ -112,10 +111,10 @@ func TestRuleEngine(t *testing.T) {
 
 		called := false
 
-		ss := &core.Session{
+		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
-			State: core.WaitingInputState{
-				Action: func(ctx *core.Context, m *message.Message) {
+			State: ohmychat.WaitingInputState{
+				Action: func(ctx *ohmychat.Context, m *ohmychat.Message) {
 					called = true
 				},
 			},
@@ -123,13 +122,13 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 
-		msg := &message.Message{Input: "zoro"}
+		msg := &ohmychat.Message{Input: "zoro"}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
 		engine := rule_engine.NewRuleEngine()
@@ -144,10 +143,10 @@ func TestRuleEngine(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		ss := &core.Session{
+		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
-			State: core.WaitingChoiceState{
-				Choices:             map[string]core.ActionFunc{},
+			State: ohmychat.WaitingChoiceState{
+				Choices:             map[string]ohmychat.ActionFunc{},
 				Prompt:              "choose an option",
 				PromptInvalidOption: "you're wrong",
 			},
@@ -155,13 +154,13 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
-		msg := &message.Message{Input: "invalid_option"}
+		msg := &ohmychat.Message{Input: "invalid_option"}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
 		engine.HandleMessage(childCtx, msg)
@@ -177,11 +176,11 @@ func TestRuleEngine(t *testing.T) {
 
 		called := false
 
-		ss := &core.Session{
+		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
-			State: core.WaitingChoiceState{
-				Choices: map[string]core.ActionFunc{
-					"1": func(ctx *core.Context, m *message.Message) {
+			State: ohmychat.WaitingChoiceState{
+				Choices: map[string]ohmychat.ActionFunc{
+					"1": func(ctx *ohmychat.Context, m *ohmychat.Message) {
 						called = true
 					},
 				},
@@ -190,13 +189,13 @@ func TestRuleEngine(t *testing.T) {
 
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
-		msg := &message.Message{Input: "1"}
+		msg := &ohmychat.Message{Input: "1"}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
 
@@ -211,7 +210,7 @@ func TestRuleEngine(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		ss := &core.Session{
+		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
 			State:          nil,
 		}
@@ -219,13 +218,13 @@ func TestRuleEngine(t *testing.T) {
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
-		msg := &message.Message{Input: "teste"}
+		msg := &ohmychat.Message{Input: "teste"}
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
-		output := make(chan message.Message, 1)
+		output := make(chan ohmychat.Message, 1)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 		engine := rule_engine.NewRuleEngine()
 
@@ -241,25 +240,25 @@ func TestRuleEngine(t *testing.T) {
 		defer ctrl.Finish()
 
 		expiredTime := time.Now().Add(-10 * time.Minute)
-		ss := &core.Session{State: core.WaitingInputState{}, LastActivityAt: expiredTime}
+		ss := &ohmychat.Session{State: ohmychat.WaitingInputState{}, LastActivityAt: expiredTime}
 
 		mockAdpater := mocks.NewMockSessionAdapter(ctrl)
 		mockAdpater.EXPECT().GetOrCreate(gomock.Any(), gomock.Any()).Return(ss, nil)
 		mockAdpater.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
-		msg := &message.Message{Input: "Monkey D Garp"}
-		output := make(chan message.Message, 1)
+		msg := &ohmychat.Message{Input: "Monkey D Garp"}
+		output := make(chan ohmychat.Message, 1)
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdpater),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdpater),
 		)
 		childCtx, _ := chatCtx.NewChildContext(*msg, output)
 
 		engine := rule_engine.NewRuleEngine()
 		engine.HandleMessage(childCtx, msg)
 
-		_, isIdle := ss.State.(core.IdleState)
+		_, isIdle := ss.State.(ohmychat.IdleState)
 		assert.True(t, isIdle, "Session should reset to IdleState after expiration")
 	})
 }

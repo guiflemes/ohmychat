@@ -5,11 +5,10 @@
 package mocks
 
 import (
-	core "github.com/guiflemes/ohmychat/core"
-	message "github.com/guiflemes/ohmychat/message"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	ohmychat "github.com/guiflemes/ohmychat"
 )
 
 // MockEngine is a mock of Engine interface.
@@ -36,7 +35,7 @@ func (m *MockEngine) EXPECT() *MockEngineMockRecorder {
 }
 
 // HandleMessage mocks base method.
-func (m *MockEngine) HandleMessage(arg0 *core.Context, arg1 *message.Message) {
+func (m *MockEngine) HandleMessage(arg0 *ohmychat.Context, arg1 *ohmychat.Message) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "HandleMessage", arg0, arg1)
 }

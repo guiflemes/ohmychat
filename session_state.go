@@ -1,4 +1,4 @@
-package core
+package ohmychat
 
 type SessionState interface {
 	IsState()

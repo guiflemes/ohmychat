@@ -4,11 +4,9 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell"
-
-	"github.com/guiflemes/ohmychat/message"
 	"github.com/guiflemes/ohmychat/utils"
 
-	"github.com/guiflemes/ohmychat/core"
+	"github.com/guiflemes/ohmychat"
 )
 
 type BotCli interface {
@@ -17,7 +15,7 @@ type BotCli interface {
 }
 
 type ChatControl struct {
-	ctx *core.ChatContext
+	ctx *ohmychat.ChatContext
 }
 
 type cliConnector struct {
@@ -25,14 +23,14 @@ type cliConnector struct {
 	control *ChatControl
 }
 
-func NewCliConnector(options ...CliOption) core.Connector {
+func NewCliConnector(options ...CliOption) ohmychat.Connector {
 	control := &ChatControl{}
 	cliBot := NewCliBot(ishell.New(), control, options...)
 	conn := &cliConnector{bot: cliBot, control: control}
 	return conn
 }
 
-func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
+func (cli *cliConnector) Acquire(ctx *ohmychat.ChatContext, input chan<- ohmychat.Message) error {
 	cli.control.ctx = ctx
 
 	updates := cli.bot.GetUpdateChanels()
@@ -46,12 +44,12 @@ func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Mes
 			if !ok {
 				continue
 			}
-			msg := message.NewMessage()
-			msg.Type = message.MsgTypeUnknown
-			msg.Connector = message.Cli
+			msg := ohmychat.NewMessage()
+			msg.Type = ohmychat.MsgTypeUnknown
+			msg.Connector = ohmychat.Cli
 			msg.ConnectorID = "CLI"
 			msg.Input = update.Message.Text
-			msg.Service = message.MsgServiceChat
+			msg.Service = ohmychat.MsgServiceChat
 			msg.ChannelID = "CLI"
 			msg.BotID = "CLI"
 			msg.BotName = update.Message.BotName
@@ -65,13 +63,13 @@ func (cli *cliConnector) Acquire(ctx *core.ChatContext, input chan<- message.Mes
 
 }
 
-func (cli *cliConnector) Dispatch(msg message.Message) error {
+func (cli *cliConnector) Dispatch(msg ohmychat.Message) error {
 	resposeMsg := NewMessage(msg.Output)
 	resposeMsg.UnBlockByAction = msg.ActionDone
 
 	switch msg.ResponseType {
-	case message.OptionResponse:
-		options := utils.Map(msg.Options, func(o message.Option) string {
+	case ohmychat.OptionResponse:
+		options := utils.Map(msg.Options, func(o ohmychat.Option) string {
 			return o.ID
 		})
 		resposeMsg.MultiChoice = options

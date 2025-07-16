@@ -1,4 +1,4 @@
-package message
+package ohmychat
 
 import (
 	"time"

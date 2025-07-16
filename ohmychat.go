@@ -5,28 +5,29 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/message"
 )
 
+type Engine interface {
+	HandleMessage(*Context, *Message)
+}
+
 type ohMyChat struct {
-	connector    core.Connector
-	eventHandler *core.EventHandler
+	connector    Connector
+	eventHandler *EventHandler
 }
 
 type OhMyChatOption func(*ohMyChat)
 
-func WithEventCallback(cb func(core.Event)) OhMyChatOption {
+func WithEventCallback(cb func(Event)) OhMyChatOption {
 	return func(b *ohMyChat) {
 		b.eventHandler.SetCallback(cb)
 	}
 }
 
-func NewOhMyChat(connector core.Connector, opts ...OhMyChatOption) *ohMyChat {
+func NewOhMyChat(connector Connector, opts ...OhMyChatOption) *ohMyChat {
 	b := &ohMyChat{
 		connector:    connector,
-		eventHandler: core.NewEventHandler(),
+		eventHandler: NewEventHandler(),
 	}
 
 	for _, opt := range opts {
@@ -35,15 +36,15 @@ func NewOhMyChat(connector core.Connector, opts ...OhMyChatOption) *ohMyChat {
 	return b
 }
 
-func (b *ohMyChat) Run(engine core.Engine) {
+func (b *ohMyChat) Run(engine Engine) {
 
-	inputMsg := make(chan message.Message, 10)
-	outputMsg := make(chan message.Message, 10)
-	eventCh := make(chan core.Event, 10)
+	inputMsg := make(chan Message, 10)
+	outputMsg := make(chan Message, 10)
+	eventCh := make(chan Event, 10)
 
-	chatCtx := core.NewChatContext(eventCh)
-	processor := core.NewProcessor(engine)
-	connector := core.NewMuitiChannelConnector(b.connector)
+	chatCtx := NewChatContext(eventCh)
+	processor := NewProcessor(engine)
+	connector := NewMuitiChannelConnector(b.connector)
 
 	sign := make(chan os.Signal, 1)
 	signal.Notify(sign, syscall.SIGTERM, os.Interrupt, syscall.SIGINT)
@@ -82,5 +83,3 @@ func (b *ohMyChat) Run(engine core.Engine) {
 	wg.Wait()
 
 }
-
-type Message = message.Message
