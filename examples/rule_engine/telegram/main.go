@@ -10,7 +10,7 @@ import (
 
 	"regexp"
 
-	"github.com/guiflemes/ohmychat/connector/telegram"
+	"github.com/guiflemes/ohmychat/connector"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -78,7 +78,7 @@ func main() {
 	if err != nil {
 		log.Panicf("error starting telegram bot %s", err.Error())
 	}
-	chatBot := ohmychat.NewOhMyChat(telegram.NewTelegramConnector(tBot), ohmychat.WithEventCallback(logOnEvent))
+	chatBot := ohmychat.NewOhMyChat(connector.Telegram(tBot), ohmychat.WithEventCallback(logOnEvent))
 	log.Println("running telegram bot...")
 	chatBot.Run(engine)
 	log.Println("telegram bot finished")

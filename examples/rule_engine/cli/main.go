@@ -8,7 +8,7 @@ import (
 
 	"regexp"
 
-	"github.com/guiflemes/ohmychat/connector/cli"
+	"github.com/guiflemes/ohmychat/connector"
 )
 
 func main() {
@@ -77,6 +77,6 @@ func main() {
 		},
 	)
 
-	chatBot := ohmychat.NewOhMyChat(cli.NewCliConnector())
+	chatBot := ohmychat.NewOhMyChat(connector.Cli())
 	chatBot.Run(engine)
 }
