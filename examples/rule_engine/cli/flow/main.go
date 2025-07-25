@@ -11,14 +11,22 @@ import (
 
 func main() {
 	e := rule_engine.NewRuleEngine()
+	// e.RegisterRule(
+	// 	rule_engine.Rule{
+	// 		Prompts: []string{"camiseta", "comprar camiseta", "camisa"},
+	// 		Action: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+	// 			msg.Output = "Olá! Vamos comprar uma camiseta. Qual marca você prefere? (Nike, Adidas)"
+	// 			ctx.SendOutput(msg)
+	// 		},
+	// 		NextState: chainingFlow(),
+	// 	},
+	// )
+
+	flow := buidlerFlow()
 	e.RegisterRule(
 		rule_engine.Rule{
 			Prompts: []string{"camiseta", "comprar camiseta", "camisa"},
-			Action: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
-				msg.Output = "Olá! Vamos comprar uma camiseta. Qual marca você prefere? (Nike, Adidas)"
-				ctx.SendOutput(msg)
-			},
-			NextState: startFlow(),
+			Action:  flow.Start(),
 		},
 	)
 
@@ -26,7 +34,41 @@ func main() {
 	chatBot.Run(e)
 }
 
-func startFlow() ohmychat.WaitingInputState {
+func buidlerFlow() *rule_engine.FlowBuilder {
+	return rule_engine.NewFlow().
+		AskChoice(
+			"Olá! Vamos comprar uma camiseta. Qual marca você prefere?",
+			[]string{"Nike", "Adidas"},
+			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+				ctx.Session().Memory["marca"] = strings.ToLower(msg.Input)
+			},
+		).
+		AskChoice(
+			"Qual tamanho voce gostaria",
+			[]string{"P", "M", "G"},
+			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+				ctx.Session().Memory["size"] = msg.Input
+			},
+		).
+		AskChoice(
+			"Qual a cor escolhida",
+			[]string{"blue", "red", "write"},
+			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+				ctx.Session().Memory["color"] = msg.Input
+			},
+		).ThenMessage("preparando tudo, só um momento...").
+		ThenFinal(
+			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+				brand := ctx.Session().Memory["marca"]
+				size := ctx.Session().Memory["size"]
+				color := ctx.Session().Memory["color"]
+				msg.Output = fmt.Sprintf("leval entao vc quer um camisa da %s, tamanho %s e cor %s", brand, size, color)
+				ctx.SendOutput(msg)
+			},
+		)
+}
+
+func chainingFlow() ohmychat.WaitingInputState {
 	return ohmychat.WaitingInputState{
 		Action: ohmychat.WithValidation(func(input string) bool {
 			ii := strings.ToLower(input)

@@ -9,6 +9,8 @@ import (
 	"github.com/guiflemes/ohmychat/utils"
 )
 
+const MatchAll = "__all__"
+
 type Rule struct {
 	Prompts   []string
 	Action    ohmychat.ActionFunc
@@ -130,6 +132,9 @@ func matchInsensitiveContains(input, pattern string) bool {
 func DefaultMatcher(rules []Rule, input string) (Rule, bool) {
 	for _, rule := range rules {
 		for _, pattern := range rule.Prompts {
+			if pattern == MatchAll {
+				return rule, true
+			}
 			if matchInsensitiveContains(input, pattern) {
 				return rule, true
 			}
