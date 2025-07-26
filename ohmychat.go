@@ -1,3 +1,4 @@
+//go:generate mockgen -source ohmychat.go -destination ./mocks/ohmychat.go -package mocks
 package ohmychat
 
 import (
@@ -43,7 +44,6 @@ func (b *ohMyChat) Run(engine Engine) {
 	eventCh := make(chan Event, 10)
 
 	chatCtx := NewChatContext(eventCh)
-	chatCtx.InputCh = inputMsg
 	processor := NewProcessor(engine)
 	connector := NewMuitiChannelConnector(b.connector)
 
@@ -72,7 +72,7 @@ func (b *ohMyChat) Run(engine Engine) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		connector.Response(chatCtx, outputMsg)
+		connector.Response(chatCtx, outputMsg, inputMsg)
 	}()
 
 	wg.Add(1)

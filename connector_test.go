@@ -77,6 +77,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		defer chatCtx.Shutdown()
 
 		output := make(chan ohmychat.Message, 2)
+		input := make(chan ohmychat.Message)
 
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -106,7 +107,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		output <- msg2
 		close(output)
 
-		mc.Response(chatCtx, output)
+		mc.Response(chatCtx, output, input)
 
 		wg.Wait()
 	})
@@ -123,6 +124,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		chatCtx := ohmychat.NewChatContext(event)
 
 		output := make(chan ohmychat.Message)
+		input := make(chan ohmychat.Message)
 
 		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
 
@@ -131,7 +133,7 @@ func TestMultiChannelConnector(t *testing.T) {
 		done := make(chan struct{})
 
 		go func() {
-			mc.Response(chatCtx, output)
+			mc.Response(chatCtx, output, input)
 			close(done)
 		}()
 
@@ -140,5 +142,60 @@ func TestMultiChannelConnector(t *testing.T) {
 		case <-time.After(100 * time.Millisecond):
 			t.Error("Response did not return after context shutdown")
 		}
+	})
+
+	t.Run("resend message when in botmod", func(t *testing.T) {
+		t.Parallel()
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockConnector := mocks.NewMockConnector(ctrl)
+		event := make(chan ohmychat.Event, 2)
+		chatCtx := ohmychat.NewChatContext(event)
+		defer chatCtx.Shutdown()
+
+		output := make(chan ohmychat.Message, 2)
+		input := make(chan ohmychat.Message, 2)
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-event
+			<-event
+			close(event)
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			m := <-input
+			assert.False(t, m.BotMode)
+			close(input)
+		}()
+
+		msg1 := ohmychat.Message{User: ohmychat.User{ID: "a"}, Input: "Hello"}
+		msg2 := ohmychat.Message{BotMode: true, User: ohmychat.User{ID: "b"}, Input: "World"}
+
+		mockConnector.EXPECT().
+			Dispatch(msg1).
+			Return(nil).
+			Times(1)
+
+		mockConnector.EXPECT().
+			Dispatch(msg2).
+			Return(nil).
+			Times(1)
+
+		mc := ohmychat.NewMuitiChannelConnector(mockConnector)
+
+		output <- msg1
+		output <- msg2
+		close(output)
+
+		mc.Response(chatCtx, output, input)
+
+		wg.Wait()
 	})
 }

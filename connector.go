@@ -26,7 +26,7 @@ func (c *multiChannelConnector) Request(ctx *ChatContext, input chan<- Message) 
 	}
 }
 
-func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan Message) {
+func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan Message, input chan<- Message) {
 	sem := make(chan struct{}, c.config.ResponseMaxPool)
 	for {
 		select {
@@ -45,7 +45,7 @@ func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan Message
 				ctx.SendEvent(*event)
 
 				if msg.BotMode {
-					ctx.InputCh <- msg.NewFrom()
+					input <- msg.NewFrom()
 				}
 
 			}(msg)

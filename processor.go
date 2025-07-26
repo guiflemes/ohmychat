@@ -1,4 +1,3 @@
-//go:generate mockgen -source processor.go -destination ./mocks/processor.go -package mocks
 package ohmychat
 
 type ProcessConfig struct {
