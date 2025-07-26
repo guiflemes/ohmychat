@@ -22,7 +22,7 @@ func main() {
 		},
 	)
 
-	tBot, err := tgbotapi.NewBotAPI("7879451742:AAExEruQ-EGx62fer25IFPYMdKV_Qu2OaBQ")
+	tBot, err := tgbotapi.NewBotAPI("YOUR_TOKEN")
 	if err != nil {
 		log.Panicf("error starting telegram bot %s", err.Error())
 	}
