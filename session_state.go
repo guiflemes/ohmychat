@@ -33,3 +33,9 @@ func (c Choices) BindMany(action ActionFunc, options ...string) Choices {
 	}
 	return c
 }
+
+type WaitingBotResponseState struct {
+	OnDone ActionFunc
+}
+
+func (WaitingBotResponseState) IsState() {}

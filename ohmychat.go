@@ -43,6 +43,7 @@ func (b *ohMyChat) Run(engine Engine) {
 	eventCh := make(chan Event, 10)
 
 	chatCtx := NewChatContext(eventCh)
+	chatCtx.InputCh = inputMsg
 	processor := NewProcessor(engine)
 	connector := NewMuitiChannelConnector(b.connector)
 

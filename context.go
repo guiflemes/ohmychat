@@ -29,6 +29,7 @@ type ChatContext struct {
 	metadata       map[string]any
 	shutdownCh     chan struct{}
 	eventCh        chan<- Event
+	InputCh        chan<- Message
 	sessionAdapter SessionAdapter
 }
 

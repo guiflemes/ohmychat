@@ -56,7 +56,9 @@ func buidlerFlow() *rule_engine.FlowBuilder {
 			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 				ctx.Session().Memory["color"] = msg.Input
 			},
-		).ThenMessage("preparando tudo, só um momento...").
+		).
+		ThenSayAndContinue("preparando tudo, só um momento...").
+		ThenSayAndContinue("só mais um instante...").
 		ThenFinal(
 			func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 				brand := ctx.Session().Memory["marca"]

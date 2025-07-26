@@ -51,12 +51,6 @@ func (f *FlowBuilder) linkSteps(step *FlowStep) {
 	f.tail = step
 }
 
-func (f *FlowBuilder) WaitInput(promps []string) *FlowBuilder {
-	step := &FlowStep{}
-	f.linkSteps(step)
-	return f
-}
-
 func (f *FlowBuilder) AskChoice(prompt string, options []string, handler ohmychat.ActionFunc) *FlowBuilder {
 	step := &FlowStep{}
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
@@ -110,20 +104,42 @@ func (f *FlowBuilder) ThenFinal(handler ohmychat.ActionFunc) *FlowBuilder {
 	return f
 }
 
-func (f *FlowBuilder) ThenMessage(prompt string) *FlowBuilder {
+func (f *FlowBuilder) ThenSayAndWait(prompt string) *FlowBuilder {
 	step := &FlowStep{}
 
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 		msg.Output = prompt
 		ctx.SendOutput(msg)
+		step.NextState = ohmychat.WaitingInputState{
+			Action: func(c *ohmychat.Context, m *ohmychat.Message) {
+				if step.Next != nil {
+					step.Next.OnReply(c, m)
+					c.SetSessionState(step.Next.NextState)
+				}
+			},
+		}
+		ctx.SetSessionState(step.NextState)
+	}
+
+	f.linkSteps(step)
+	return f
+}
+
+func (f *FlowBuilder) ThenSayAndContinue(prompt string) *FlowBuilder {
+	step := &FlowStep{}
+
+	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+		msg.Output = prompt
+		msg.BotMode = true
 		ctx.SendOutput(msg)
-		ctx.SendOutput(msg)
-		step.NextState = ohmychat.IdleState{}
-		// if step.Next != nil {
-		// 	step.Next.OnReply(ctx, msg)
-		// 	ctx.SetSessionState(step.Next.NextState)
-		// 	return
-		// }
+		step.NextState = ohmychat.WaitingBotResponseState{
+			OnDone: func(c *ohmychat.Context, m *ohmychat.Message) {
+				if step.Next != nil {
+					step.Next.OnReply(c, m)
+					c.SetSessionState(step.Next.NextState)
+				}
+			},
+		}
 		ctx.SetSessionState(step.NextState)
 	}
 

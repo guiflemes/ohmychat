@@ -74,9 +74,15 @@ func (e *RuleEngine) HandleMessage(ctx *ohmychat.Context, msg *ohmychat.Message)
 		e.handleWaitingInputState(ctx, msg, state)
 	case ohmychat.WaitingChoiceState:
 		e.handleWaitingChoiceState(ctx, msg, state)
+	case ohmychat.WaitingBotResponseState:
+		e.handleWaitingBot(ctx, msg, state)
 	default:
 		e.handleUnknownState(ctx, msg)
 	}
+}
+
+func (e *RuleEngine) handleWaitingBot(ctx *ohmychat.Context, msg *ohmychat.Message, state ohmychat.WaitingBotResponseState) {
+	state.OnDone(ctx, msg)
 }
 
 func (e *RuleEngine) handleIdleState(ctx *ohmychat.Context, msg *ohmychat.Message) {

@@ -38,12 +38,15 @@ func (c *multiChannelConnector) Response(ctx *ChatContext, output <-chan Message
 				sem <- struct{}{}
 				defer func() { <-sem }()
 				err := c.connector.Dispatch(msg)
-
 				event := NewEvent(msg)
 				if err != nil {
 					event.WithError(err)
 				}
 				ctx.SendEvent(*event)
+
+				if msg.BotMode {
+					ctx.InputCh <- msg.NewFrom()
+				}
 
 			}(msg)
 		case <-ctx.Done():

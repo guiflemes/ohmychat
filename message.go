@@ -80,6 +80,7 @@ type Message struct {
 	Meta         *Meta            `json:"meta"`
 	ActionDone   bool
 	User         User
+	BotMode      bool
 }
 
 func NewMessage() Message {
@@ -87,5 +88,22 @@ func NewMessage() Message {
 		ID:        uuid.NewString(),
 		StartTime: time.Now().Unix(),
 		Meta:      &Meta{Data: make(map[string]string)},
+	}
+}
+
+func (m Message) NewFrom() Message {
+	return Message{
+		ID:          uuid.NewString(),
+		Type:        m.Type,
+		Service:     m.Service,
+		Connector:   m.Connector,
+		ConnectorID: m.ConnectorID,
+		BotID:       m.BotID,
+		BotName:     m.BotName,
+		ChannelID:   m.ChannelID,
+		ChannelName: m.ChannelName,
+		StartTime:   time.Now().Unix(),
+		Meta:        &Meta{Data: make(map[string]string)},
+		User:        m.User,
 	}
 }
