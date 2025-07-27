@@ -1,9 +1,8 @@
 //go:generate mockgen -source context.go -destination ./mocks/context.go -package mocks
-package core
+package ohmychat
 
 import (
 	"context"
-	"github.com/guiflemes/ohmychat/message"
 	"time"
 )
 
@@ -99,7 +98,7 @@ func (c *ChatContext) Get(key string) (any, bool) {
 	return v, ok
 }
 
-func (c *ChatContext) NewChildContext(msg message.Message, outputCh chan<- message.Message) (*Context, error) {
+func (c *ChatContext) NewChildContext(msg Message, outputCh chan<- Message) (*Context, error) {
 	ctx, cancel := context.WithTimeout(c.ctx, 60*time.Second)
 
 	sess, err := c.sessionAdapter.GetOrCreate(ctx, msg.User.ID)
@@ -123,7 +122,7 @@ type Context struct {
 	cancel          context.CancelFunc
 	session         *Session
 	parent          *ChatContext
-	outputCh        chan<- message.Message
+	outputCh        chan<- Message
 	replyDispatched uint8
 }
 
@@ -156,7 +155,7 @@ func (c *Context) MessageHasBeenReplyed() bool {
 	return c.replyDispatched != 0
 }
 
-func (c *Context) SendOutput(msg *message.Message) {
+func (c *Context) SendOutput(msg *Message) {
 	c.parent.SaveSession(c.Context(), c.session)
 	c.replyDispatched |= ReplyDispatched
 	c.outputCh <- *msg

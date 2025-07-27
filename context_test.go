@@ -1,12 +1,11 @@
-package core_test
+package ohmychat_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/guiflemes/ohmychat/core"
-	"github.com/guiflemes/ohmychat/core/mocks"
-	"github.com/guiflemes/ohmychat/message"
+	"github.com/guiflemes/ohmychat"
+	"github.com/guiflemes/ohmychat/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ func TestChatContextAndContext(t *testing.T) {
 	t.Run("creates context with default session adapter", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := core.NewChatContext(make(chan<- core.Event))
+		ctx := ohmychat.NewChatContext(make(chan<- ohmychat.Event))
 		assert.True(t, ctx.IsActive())
 
 		ctx.Set("foo", "bar")
@@ -37,20 +36,20 @@ func TestChatContextAndContext(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockAdapter := mocks.NewMockSessionAdapter(ctrl)
-		session := &core.Session{UserID: "abc", Memory: make(map[string]any), State: core.IdleState{}}
+		session := &ohmychat.Session{UserID: "abc", Memory: make(map[string]any), State: ohmychat.IdleState{}}
 
 		mockAdapter.EXPECT().
 			GetOrCreate(gomock.Any(), "abc").
 			Return(session, nil).
 			Times(1)
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdapter),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdapter),
 		)
 
-		msg := message.Message{User: message.User{ID: "abc"}}
-		output := make(chan message.Message, 1)
+		msg := ohmychat.Message{User: ohmychat.User{ID: "abc"}}
+		output := make(chan ohmychat.Message, 1)
 
 		child, err := chatCtx.NewChildContext(msg, output)
 		assert.NoError(t, err)
@@ -65,7 +64,7 @@ func TestChatContextAndContext(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockAdapter := mocks.NewMockSessionAdapter(ctrl)
-		session := &core.Session{UserID: "kizaru", Memory: make(map[string]any), State: core.IdleState{}}
+		session := &ohmychat.Session{UserID: "kizaru", Memory: make(map[string]any), State: ohmychat.IdleState{}}
 
 		mockAdapter.EXPECT().
 			GetOrCreate(gomock.Any(), "kizaru").
@@ -77,18 +76,18 @@ func TestChatContextAndContext(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		chatCtx := core.NewChatContext(
-			make(chan<- core.Event),
-			core.WithSessionAdapter(mockAdapter),
+		chatCtx := ohmychat.NewChatContext(
+			make(chan<- ohmychat.Event),
+			ohmychat.WithSessionAdapter(mockAdapter),
 		)
 
-		msg := message.Message{User: message.User{ID: "kizaru"}}
-		output := make(chan message.Message, 1)
+		msg := ohmychat.Message{User: ohmychat.User{ID: "kizaru"}}
+		output := make(chan ohmychat.Message, 1)
 
 		childCtx, err := chatCtx.NewChildContext(msg, output)
 		assert.NoError(t, err)
 
-		toSend := &message.Message{User: message.User{ID: "kizaru"}, Input: "hello!"}
+		toSend := &ohmychat.Message{User: ohmychat.User{ID: "kizaru"}, Input: "hello!"}
 		childCtx.SendOutput(toSend)
 
 		select {

@@ -6,10 +6,10 @@ package mocks
 
 import (
 	context "context"
-	core "github.com/guiflemes/ohmychat/core"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	ohmychat "github.com/guiflemes/ohmychat"
 )
 
 // MockSessionAdapter is a mock of SessionAdapter interface.
@@ -36,10 +36,10 @@ func (m *MockSessionAdapter) EXPECT() *MockSessionAdapterMockRecorder {
 }
 
 // GetOrCreate mocks base method.
-func (m *MockSessionAdapter) GetOrCreate(ctx context.Context, sessionID string) (*core.Session, error) {
+func (m *MockSessionAdapter) GetOrCreate(ctx context.Context, sessionID string) (*ohmychat.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrCreate", ctx, sessionID)
-	ret0, _ := ret[0].(*core.Session)
+	ret0, _ := ret[0].(*ohmychat.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,7 +51,7 @@ func (mr *MockSessionAdapterMockRecorder) GetOrCreate(ctx, sessionID interface{}
 }
 
 // Save mocks base method.
-func (m *MockSessionAdapter) Save(ctx context.Context, session *core.Session) error {
+func (m *MockSessionAdapter) Save(ctx context.Context, session *ohmychat.Session) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", ctx, session)
 	ret0, _ := ret[0].(error)

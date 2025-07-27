@@ -5,11 +5,10 @@
 package mocks
 
 import (
-	core "github.com/guiflemes/ohmychat/core"
-	message "github.com/guiflemes/ohmychat/message"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	ohmychat "github.com/guiflemes/ohmychat"
 )
 
 // MockConnector is a mock of Connector interface.
@@ -36,7 +35,7 @@ func (m *MockConnector) EXPECT() *MockConnectorMockRecorder {
 }
 
 // Acquire mocks base method.
-func (m *MockConnector) Acquire(ctx *core.ChatContext, input chan<- message.Message) error {
+func (m *MockConnector) Acquire(ctx *ohmychat.ChatContext, input chan<- ohmychat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Acquire", ctx, input)
 	ret0, _ := ret[0].(error)
@@ -50,7 +49,7 @@ func (mr *MockConnectorMockRecorder) Acquire(ctx, input interface{}) *gomock.Cal
 }
 
 // Dispatch mocks base method.
-func (m *MockConnector) Dispatch(message message.Message) error {
+func (m *MockConnector) Dispatch(message ohmychat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Dispatch", message)
 	ret0, _ := ret[0].(error)

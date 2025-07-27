@@ -1,11 +1,10 @@
-package core_test
+package ohmychat_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/guiflemes/ohmychat/core"
-
+	"github.com/guiflemes/ohmychat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +14,7 @@ func TestInMemorySessionRepo(t *testing.T) {
 	t.Run("creates a new session when not found", func(t *testing.T) {
 		t.Parallel()
 
-		repo := core.NewInMemorySessionRepo()
+		repo := ohmychat.NewInMemorySessionRepo()
 		ctx := context.Background()
 
 		session, err := repo.GetOrCreate(ctx, "user123")
@@ -23,13 +22,13 @@ func TestInMemorySessionRepo(t *testing.T) {
 		assert.NotNil(t, session)
 		assert.Equal(t, "user123", session.UserID)
 		assert.NotNil(t, session.Memory)
-		assert.IsType(t, core.IdleState{}, session.State)
+		assert.IsType(t, ohmychat.IdleState{}, session.State)
 	})
 
 	t.Run("returns the same session on second call", func(t *testing.T) {
 		t.Parallel()
 
-		repo := core.NewInMemorySessionRepo()
+		repo := ohmychat.NewInMemorySessionRepo()
 		ctx := context.Background()
 
 		first, err1 := repo.GetOrCreate(ctx, "user456")
@@ -43,12 +42,12 @@ func TestInMemorySessionRepo(t *testing.T) {
 	t.Run("save does not return error", func(t *testing.T) {
 		t.Parallel()
 
-		repo := core.NewInMemorySessionRepo()
+		repo := ohmychat.NewInMemorySessionRepo()
 		ctx := context.Background()
 
-		session := &core.Session{
+		session := &ohmychat.Session{
 			UserID: "user789",
-			State:  core.IdleState{},
+			State:  ohmychat.IdleState{},
 			Memory: map[string]any{"key": "value"},
 		}
 

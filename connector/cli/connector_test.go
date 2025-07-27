@@ -10,7 +10,7 @@ package cli
 // 	"github.com/guiflemes/ohmychat/logger"
 // 	"github.com/guiflemes/ohmychat/message"
 
-// 	"github.com/guiflemes/ohmychat/core"
+// 	"github.com/guiflemes/ohmychat"
 // )
 
 // func TestMain(m *testing.M) {

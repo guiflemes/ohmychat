@@ -1,6 +1,10 @@
 package utils
 
-import "context"
+import (
+	"context"
+
+	"github.com/guiflemes/ohmychat"
+)
 
 func PtrOf[T any](v T) *T {
 	return &v
@@ -36,4 +40,13 @@ func RemoveItemByIndex[T any](slice []T, index int) []T {
 		return append(slice[:index], slice[index+1:]...)
 	}
 	return slice
+}
+
+func OptionsFromList(options []string) []ohmychat.Option {
+	return Map(options, func(op string) ohmychat.Option {
+		return ohmychat.Option{
+			ID:   op,
+			Name: op,
+		}
+	})
 }

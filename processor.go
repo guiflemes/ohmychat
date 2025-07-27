@@ -1,16 +1,7 @@
-//go:generate mockgen -source processor.go -destination ./mocks/processor.go -package mocks
-package core
-
-import (
-	"github.com/guiflemes/ohmychat/message"
-)
+package ohmychat
 
 type ProcessConfig struct {
 	MaxPool uint8
-}
-
-type Engine interface {
-	HandleMessage(*Context, *message.Message)
 }
 
 type processor struct {
@@ -27,8 +18,8 @@ func NewProcessor(engine Engine) *processor {
 
 func (p *processor) Process(
 	ctx *ChatContext,
-	inputMsg <-chan message.Message,
-	outputMsg chan<- message.Message,
+	inputMsg <-chan Message,
+	outputMsg chan<- Message,
 ) {
 	sem := make(chan struct{}, p.config.MaxPool)
 	for {
@@ -37,7 +28,7 @@ func (p *processor) Process(
 			if !ok {
 				return
 			}
-			go func(m message.Message) {
+			go func(m Message) {
 				sem <- struct{}{}
 				defer func() { <-sem }()
 
