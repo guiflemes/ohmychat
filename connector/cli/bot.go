@@ -34,10 +34,6 @@ func NewCliBot(shell *ishell.Shell, control *ChatControl, opts ...CliOption) *Cl
 		if count >= 1 {
 			c.Println("Interrupted")
 			shell.Stop()
-			if control.ctx == nil {
-				panic("ctx in null")
-			}
-			control.ctx.Shutdown()
 		}
 	})
 
@@ -53,6 +49,10 @@ func NewCliBot(shell *ishell.Shell, control *ChatControl, opts ...CliOption) *Cl
  \/--|_|--\/`)
 		}
 		shell.Run()
+		if control.ctx == nil {
+			panic("ctx in null")
+		}
+		control.ctx.Shutdown()
 	}()
 
 	shell.AddCmd(&ishell.Cmd{
@@ -123,10 +123,8 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 			input = strings.TrimSpace(input)
 
 			if input == "exit" {
-				//TODO se der um exit, o chat vai entrar em modo suspenso, e sppo CTRL-C vai parar ele, de um jeito de o chat pedir algo
-				// deixar em modo, saindo/aguardado (qualquer exit deixa nesse modo, até no menu inicial)
 				bot.shellCtx.Println("Exiting chat mode...")
-				bot.shellCtx.Println("Input Ctrl-c to exit")
+				bot.shellCtx.Println("Press Ctrl+C or type 'exit' to quit")
 				return
 			}
 
