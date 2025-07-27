@@ -77,6 +77,7 @@ type Message struct {
 	Text            string
 	MultiChoice     []string
 	UnBlockByAction bool
+	BotMode         bool
 }
 
 func (m Message) IsMultiChoice() bool {
@@ -137,24 +138,12 @@ func (bot *CliBot) StartChat(c *ishell.Context) {
 		case message := <-bot.multiChoiceCh:
 			choice := bot.shellCtx.MultiChoice(message.MultiChoice, "select your choice:")
 			bot.receiveCh <- message.MultiChoice[choice]
-
 		case message := <-bot.outputCh:
 			bot.shellCtx.Print("BOT: ")
 			bot.shellCtx.Println(message.Text)
-			bot.consumeRemaining()
-			bot.waitingResponse = false
-		}
-	}
-}
-
-func (bot *CliBot) consumeRemaining() {
-	for {
-		select {
-		case msg := <-bot.outputCh:
-			bot.shellCtx.Print("BOT: ")
-			bot.shellCtx.Println(msg.Text)
-		default:
-			return
+			if !message.BotMode {
+				bot.waitingResponse = false
+			}
 		}
 	}
 }

@@ -54,10 +54,7 @@ func (cli *cliConnector) Acquire(ctx *ohmychat.ChatContext, input chan<- ohmycha
 			msg.BotID = "CLI"
 			msg.BotName = update.Message.BotName
 			msg.User.ID = "cli_id"
-
 			input <- msg
-
-		default:
 		}
 	}
 
@@ -66,6 +63,7 @@ func (cli *cliConnector) Acquire(ctx *ohmychat.ChatContext, input chan<- ohmycha
 func (cli *cliConnector) Dispatch(msg ohmychat.Message) error {
 	resposeMsg := NewMessage(msg.Output)
 	resposeMsg.UnBlockByAction = msg.ActionDone
+	resposeMsg.BotMode = msg.BotMode
 
 	switch msg.ResponseType {
 	case ohmychat.OptionResponse:

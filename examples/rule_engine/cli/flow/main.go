@@ -11,22 +11,21 @@ import (
 
 func main() {
 	e := rule_engine.NewRuleEngine()
-	// e.RegisterRule(
-	// 	rule_engine.Rule{
-	// 		Prompts: []string{"camiseta", "comprar camiseta", "camisa"},
-	// 		Action: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
-	// 			msg.Output = "Olá! Vamos comprar uma camiseta. Qual marca você prefere? (Nike, Adidas)"
-	// 			ctx.SendOutput(msg)
-	// 		},
-	// 		NextState: chainingFlow(),
-	// 	},
-	// )
 
 	flow := buidlerFlow()
 	e.RegisterRule(
 		rule_engine.Rule{
 			Prompts: []string{"camiseta", "comprar camiseta", "camisa"},
 			Action:  flow.Start(),
+		},
+
+		rule_engine.Rule{
+			Prompts: []string{"roupa", "pano", "vestuario"},
+			Action: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+				msg.Output = "Olá! Vamos comprar uma camiseta. Qual marca você prefere? (Nike, Adidas)"
+				ctx.SendOutput(msg)
+			},
+			NextState: chainingFlow(),
 		},
 	)
 
@@ -112,7 +111,16 @@ func chainingFlow() ohmychat.WaitingInputState {
 										brand := ctx.Session().Memory["marca"]
 										size := ctx.Session().Memory["size"]
 										msg.Output = fmt.Sprintf("leval entao vc quer um camisa da %s, tamanho %s e cor %s", brand, size, msg.Input)
+										msg.BotMode = true // set bot mode to lock user reply
 										ctx.SendOutput(msg)
+										ctx.SetSessionState(ohmychat.WaitingBotResponseState{
+											OnDone: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+												msg.Output = "legal compra feita"
+												ctx.SendOutput(msg)
+												//set idle state to release user reply
+												ctx.SetSessionState(ohmychat.IdleState{})
+											},
+										})
 									}, "red", "blue", "write"),
 							})
 

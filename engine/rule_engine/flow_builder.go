@@ -6,7 +6,7 @@ import (
 )
 
 // Flow Execution Overview
-// The Build() method links all the defined steps into a singly linked list, but no steps are executed during build time.
+// The Start() method links all the defined steps into a singly linked list, but no steps are executed during build time.
 
 // Initialization:
 // The flow starts when a user input matches a rule and triggers the root step (root.OnReply).
