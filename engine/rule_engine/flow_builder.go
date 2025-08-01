@@ -1,6 +1,7 @@
 package rule_engine
 
 import (
+	"github.com/google/uuid"
 	"github.com/guiflemes/ohmychat"
 	"github.com/guiflemes/ohmychat/utils"
 )
@@ -30,6 +31,7 @@ type FlowBuilder struct {
 }
 
 type FlowStep struct {
+	id        string
 	Prompt    string
 	OnReply   ohmychat.ActionFunc
 	Next      *FlowStep
@@ -52,7 +54,7 @@ func (f *FlowBuilder) linkSteps(step *FlowStep) {
 }
 
 func (f *FlowBuilder) AskChoice(prompt string, options []string, handler ohmychat.ActionFunc) *FlowBuilder {
-	step := &FlowStep{}
+	step := &FlowStep{id: uuid.NewString()}
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 		msg.ResponseType = ohmychat.OptionResponse
 		msg.Output = prompt
@@ -76,7 +78,7 @@ func (f *FlowBuilder) AskChoice(prompt string, options []string, handler ohmycha
 }
 
 func (f *FlowBuilder) ThenAsk(prompt string, handler ohmychat.ActionFunc) *FlowBuilder {
-	step := &FlowStep{}
+	step := &FlowStep{id: uuid.NewString()}
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 		msg.ResponseType = ohmychat.TextResponse
 		msg.Output = prompt
@@ -99,13 +101,13 @@ func (f *FlowBuilder) ThenAsk(prompt string, handler ohmychat.ActionFunc) *FlowB
 }
 
 func (f *FlowBuilder) ThenFinal(handler ohmychat.ActionFunc) *FlowBuilder {
-	step := &FlowStep{OnReply: handler, NextState: ohmychat.IdleState{}}
+	step := &FlowStep{id: uuid.NewString(), OnReply: handler, NextState: ohmychat.IdleState{}}
 	f.linkSteps(step)
 	return f
 }
 
 func (f *FlowBuilder) ThenSayAndWait(prompt string) *FlowBuilder {
-	step := &FlowStep{}
+	step := &FlowStep{id: uuid.NewString()}
 
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 		msg.Output = prompt
@@ -126,7 +128,7 @@ func (f *FlowBuilder) ThenSayAndWait(prompt string) *FlowBuilder {
 }
 
 func (f *FlowBuilder) ThenSayAndContinue(prompt string) *FlowBuilder {
-	step := &FlowStep{}
+	step := &FlowStep{id: uuid.NewString()}
 
 	step.OnReply = func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 		msg.Output = prompt

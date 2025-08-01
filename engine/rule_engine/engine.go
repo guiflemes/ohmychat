@@ -114,7 +114,7 @@ func (e *RuleEngine) handleWaitingInputState(ctx *ohmychat.Context, msg *ohmycha
 }
 
 func (e *RuleEngine) handleWaitingChoiceState(ctx *ohmychat.Context, msg *ohmychat.Message, state ohmychat.WaitingChoiceState) {
-	handler, ok := state.Choices[msg.Input]
+	handler, ok := state.Choices.GetHandler(msg.Input)
 	if !ok {
 		msg.Output = state.PromptInvalidOption
 		ctx.SendOutput(msg)
@@ -123,7 +123,6 @@ func (e *RuleEngine) handleWaitingChoiceState(ctx *ohmychat.Context, msg *ohmych
 
 	ctx.SetSessionState(ohmychat.IdleState{})
 	handler(ctx, msg)
-
 }
 
 func (e *RuleEngine) handleUnknownState(ctx *ohmychat.Context, msg *ohmychat.Message) {

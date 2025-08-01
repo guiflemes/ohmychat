@@ -10,6 +10,7 @@ const SessionExpiresAt = time.Duration(5) * time.Minute
 
 type Session struct {
 	UserID         string
+	StateID        StateID
 	State          SessionState
 	Memory         map[string]any
 	LastActivityAt time.Time

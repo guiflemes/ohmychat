@@ -146,7 +146,7 @@ func TestRuleEngine(t *testing.T) {
 		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
 			State: ohmychat.WaitingChoiceState{
-				Choices:             map[string]ohmychat.ActionFunc{},
+				Choices:             ohmychat.Choices{},
 				Prompt:              "choose an option",
 				PromptInvalidOption: "you're wrong",
 			},
@@ -179,9 +179,10 @@ func TestRuleEngine(t *testing.T) {
 		ss := &ohmychat.Session{
 			LastActivityAt: time.Now(),
 			State: ohmychat.WaitingChoiceState{
-				Choices: map[string]ohmychat.ActionFunc{
-					"1": func(ctx *ohmychat.Context, m *ohmychat.Message) {
-						called = true
+				Choices: ohmychat.Choices{
+					{
+						Text:    "1",
+						Handler: func(ctx *ohmychat.Context, m *ohmychat.Message) { called = true },
 					},
 				},
 			},

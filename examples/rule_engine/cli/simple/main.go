@@ -61,13 +61,19 @@ func main() {
 			},
 			NextState: ohmychat.WaitingChoiceState{
 				Choices: ohmychat.Choices{
-					"beagle": func(ctx *ohmychat.Context, msg *ohmychat.Message) {
-						msg.Output = "legal, o cão mais fofo e gordo que existe"
-						ctx.SendOutput(msg)
+					{
+						Text: "beagle",
+						Handler: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+							msg.Output = "legal, o cão mais fofo e gordo que existe"
+							ctx.SendOutput(msg)
+						},
 					},
-					"pinscher": func(ctx *ohmychat.Context, msg *ohmychat.Message) {
-						msg.Output = "legal, o cão mais feroz do mundo"
-						ctx.SendOutput(msg)
+					{
+						Text: "pinscher",
+						Handler: func(ctx *ohmychat.Context, msg *ohmychat.Message) {
+							msg.Output = "legal, o cão mais feroz do mundo"
+							ctx.SendOutput(msg)
+						},
 					},
 				}.BindMany(func(ctx *ohmychat.Context, msg *ohmychat.Message) {
 					msg.Output = fmt.Sprintf("nossa seu cão %s é tao sem graça", msg.Input)

@@ -30,6 +30,7 @@ type ChatContext struct {
 	shutdownCh     chan struct{}
 	eventCh        chan<- Event
 	sessionAdapter SessionAdapter
+	states         *StateRegister
 }
 
 func NewChatContext(eventCh chan<- Event, options ...ChatContextOption) *ChatContext {
@@ -41,6 +42,7 @@ func NewChatContext(eventCh chan<- Event, options ...ChatContextOption) *ChatCon
 		metadata:   make(map[string]any),
 		shutdownCh: make(chan struct{}),
 		eventCh:    eventCh,
+		states:     NewStateRegister(),
 	}
 
 	for _, opt := range options {
@@ -107,6 +109,9 @@ func (c *ChatContext) NewChildContext(msg Message, outputCh chan<- Message) (*Co
 		return nil, err
 	}
 
+	state := c.states.GetState(sess.StateID)
+	sess.State = state
+
 	return &Context{
 		ctx:             ctx,
 		cancel:          cancel,
@@ -148,7 +153,12 @@ func (c *Context) Session() *Session {
 }
 
 func (c *Context) SetSessionState(state SessionState) {
-	c.session.State = state
+	// em algum momento o next é uma interface {}
+	if state == nil {
+		return
+	}
+	c.session.StateID = state.Hash()
+	c.parent.states.Register(state)
 }
 
 func (c *Context) MessageHasBeenReplyed() bool {
